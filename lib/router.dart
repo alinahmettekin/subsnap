@@ -12,6 +12,8 @@ import 'package:subsnap/features/subscriptions/presentation/add_subscription_scr
 import 'package:subsnap/features/subscriptions/domain/entities/subscription.dart';
 import 'package:subsnap/features/subscriptions/domain/entities/subscription_template.dart';
 import 'package:subsnap/features/analytics/presentation/analytics_screen.dart';
+import 'package:subsnap/features/payments/presentation/paywall_screen.dart';
+import 'package:subsnap/features/achievements/presentation/achievements_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Auth state değişikliklerini dinle ve router'ı refresh et
@@ -82,12 +84,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/home/settings',
             builder: (context, state) => const SettingsScreen(),
-            routes: [
-              GoRoute(
-                path: 'edit-profile',
-                builder: (context, state) => const ProfileSetupScreen(isEdit: true),
-              ),
-            ],
+          ),
+          GoRoute(
+            path: '/home/settings/edit-profile',
+            builder: (context, state) => const ProfileSetupScreen(isEdit: true),
+          ),
+          GoRoute(
+            path: '/home/settings/paywall',
+            builder: (context, state) => const PaywallScreen(),
+          ),
+          GoRoute(
+            path: '/home/settings/achievements',
+            builder: (context, state) => const AchievementsScreen(),
           ),
         ],
       ),

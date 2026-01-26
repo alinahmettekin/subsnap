@@ -54,6 +54,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             width: 36,
                             height: 36,
                             fit: BoxFit.cover,
+                            placeholderBuilder: (context) => const SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint('❌ [DASHBOARD] SVG yükleme hatası: $error');
+                              return const SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: Icon(Icons.error_outline, size: 20, color: Colors.grey),
+                              );
+                            },
                           ),
                         )
                       : Text(

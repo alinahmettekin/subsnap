@@ -39,3 +39,55 @@ class ShowQuickAddNotifier extends Notifier<bool> {
     }
   }
 }
+
+/// Uygulama geneli bildirim ayarı
+final appNotificationsProvider = NotifierProvider<AppNotificationsNotifier, bool>(() {
+  return AppNotificationsNotifier();
+});
+
+class AppNotificationsNotifier extends Notifier<bool> {
+  static const String _key = 'app_notifications_enabled';
+
+  @override
+  bool build() {
+    Future.microtask(() => _loadSetting());
+    return true;
+  }
+
+  Future<void> _loadSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getBool(_key) ?? true;
+  }
+
+  Future<void> setEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, value);
+    state = value;
+  }
+}
+
+/// Hatırlatma bildirimleri ayarı
+final retentionNotificationsProvider = NotifierProvider<RetentionNotificationsNotifier, bool>(() {
+  return RetentionNotificationsNotifier();
+});
+
+class RetentionNotificationsNotifier extends Notifier<bool> {
+  static const String _key = 'retention_notifications_enabled';
+
+  @override
+  bool build() {
+    Future.microtask(() => _loadSetting());
+    return true;
+  }
+
+  Future<void> _loadSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getBool(_key) ?? true;
+  }
+
+  Future<void> setEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, value);
+    state = value;
+  }
+}

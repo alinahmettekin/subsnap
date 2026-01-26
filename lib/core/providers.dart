@@ -13,6 +13,9 @@ import 'package:subsnap/features/auth/data/supabase_auth_repository.dart';
 import 'package:subsnap/features/auth/domain/repositories/profile_repository.dart';
 import 'package:subsnap/features/auth/data/supabase_profile_repository.dart';
 import 'package:subsnap/features/auth/domain/entities/user_profile.dart';
+import 'package:subsnap/features/achievements/domain/entities/achievement.dart';
+import 'package:subsnap/features/achievements/domain/repositories/achievements_repository.dart';
+import 'package:subsnap/features/achievements/data/supabase_achievements_repository.dart';
 export 'package:subsnap/core/providers/theme_provider.dart';
 
 // --- Core ---
@@ -57,6 +60,17 @@ final subscriptionTemplatesRepositoryProvider = Provider<SubscriptionTemplatesRe
 final paymentsRepositoryProvider = Provider<PaymentsRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return SupabasePaymentsRepository(client);
+});
+
+final achievementsRepositoryProvider = Provider<AchievementsRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return SupabaseAchievementsRepository(client);
+});
+
+final achievementsProvider = FutureProvider.autoDispose<List<Achievement>>((ref) async {
+  final userId = ref.watch(authUserProvider).value?.id;
+  if (userId == null) return [];
+  return ref.read(achievementsRepositoryProvider).getAchievements(userId);
 });
 
 // --- Auth (Simplified for MVP: Just exposing the current user stream) ---

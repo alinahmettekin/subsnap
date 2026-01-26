@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:subsnap/core/providers.dart';
+import 'package:subsnap/core/services/notification_service.dart';
 import 'package:subsnap/features/subscriptions/domain/entities/subscription.dart';
 import 'package:subsnap/features/subscriptions/domain/entities/subscription_template.dart';
 import 'package:subsnap/features/subscriptions/domain/entities/category.dart';
 import 'package:subsnap/features/subscriptions/presentation/categories_provider.dart';
+import 'package:subsnap/features/subscriptions/presentation/subscriptions_provider.dart';
+import 'package:subsnap/core/utils/achievement_notification_helper.dart';
+import 'package:subsnap/router.dart';
 import 'package:uuid/uuid.dart';
 
 class AddSubscriptionScreen extends ConsumerStatefulWidget {
@@ -35,6 +39,8 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
   DateTime _nextPaymentDate = DateTime.now().add(const Duration(days: 30));
   bool _isPaused = false;
   DateTime? _pausedUntil;
+  bool _notify1DayBefore = true;
+  bool _notify3DaysBefore = false;
 
   bool _isLoading = false;
   bool _isDisposed = false;
@@ -65,6 +71,8 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
           _nextPaymentDate = sub.nextPaymentDate;
           _isPaused = sub.isPaused;
           _pausedUntil = sub.pausedUntil;
+          _notify1DayBefore = sub.notify1DayBefore;
+          _notify3DaysBefore = sub.notify3DaysBefore;
         }
       }
     } catch (e, stackTrace) {
@@ -160,14 +168,44 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
         categoryName: categoryName.isEmpty ? null : categoryName,
         isPaused: _isPaused,
         pausedUntil: _pausedUntil,
+        notify1DayBefore: _notify1DayBefore,
+        notify3DaysBefore: _notify3DaysBefore,
       );
 
       final repo = ref.read(subscriptionsRepositoryProvider);
 
       if (widget.subscriptionToEdit != null) {
         await repo.updateSubscription(newSub);
+        // Reschedule notification
+        await NotificationService().cancelNotification(newSub.id);
+        await NotificationService().scheduleSubscriptionReminder(newSub);
       } else {
         await repo.addSubscription(newSub);
+        // Schedule new notification
+        await NotificationService().scheduleSubscriptionReminder(newSub);
+        // Check for achievements
+        try {
+          final subsCount = ref.read(subscriptionsProvider).value?.length ?? 0;
+          debugPrint('🎯 [ADD_SUB] Current subsCount: $subsCount, awarding for ${subsCount + 1}');
+          final newlyEarned = await ref.read(achievementsRepositoryProvider).checkAndAwardSubscriptionAchievements(
+                user.id,
+                subsCount + 1, // Current + the new one
+              );
+
+          if (newlyEarned.isNotEmpty && mounted) {
+            final goRouter = ref.read(routerProvider);
+            for (final achievement in newlyEarned) {
+              AchievementNotificationHelper.showAchievementEarned(
+                context,
+                achievement,
+                onNotificationTap: () => goRouter.push('/home/settings/achievements'),
+              );
+            }
+          }
+          ref.invalidate(achievementsProvider);
+        } catch (e) {
+          debugPrint('❌ [ADD_SUB] Achievement check error: $e');
+        }
       }
 
       // Navigate back only if still mounted
@@ -228,6 +266,9 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
     try {
       final repo = ref.read(subscriptionsRepositoryProvider);
       await repo.deleteSubscription(widget.subscriptionToEdit!.id);
+
+      // Cancel notification
+      await NotificationService().cancelNotification(widget.subscriptionToEdit!.id);
 
       // Navigate back only if still mounted
       if (mounted) {
@@ -435,6 +476,40 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
                     ),
                   ),
                 ],
+
+                const SizedBox(height: 16),
+
+                // Bildirim Ayarları
+                Text(
+                  'Bildirim Ayarları',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        title: const Text('1 Gün Önce'),
+                        subtitle: const Text('Ödemeden 1 gün önce hatırlat'),
+                        value: _notify1DayBefore,
+                        onChanged: (value) => setState(() => _notify1DayBefore = value),
+                        secondary: const Icon(Icons.notifications_active_outlined),
+                      ),
+                      const Divider(height: 1),
+                      SwitchListTile(
+                        title: const Text('3 Gün Önce'),
+                        subtitle: const Text('Ödemeden 3 gün önce hatırlat'),
+                        value: _notify3DaysBefore,
+                        onChanged: (value) => setState(() => _notify3DaysBefore = value),
+                        secondary: const Icon(Icons.notification_important_outlined),
+                      ),
+                    ],
+                  ),
+                ),
 
                 const SizedBox(height: 32),
 

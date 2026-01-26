@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 class Payment extends Equatable {
   final String id;
   final String subscriptionId;
+  final String userId;
   final DateTime paymentDate;
   final double amount;
   final String currency;
@@ -11,6 +12,7 @@ class Payment extends Equatable {
   const Payment({
     required this.id,
     required this.subscriptionId,
+    required this.userId,
     required this.paymentDate,
     required this.amount,
     required this.currency,
@@ -20,6 +22,7 @@ class Payment extends Equatable {
   List<Object?> get props => [
         id,
         subscriptionId,
+        userId,
         paymentDate,
         amount,
         currency,
@@ -29,6 +32,7 @@ class Payment extends Equatable {
     return {
       'id': id,
       'subscription_id': subscriptionId,
+      'user_id': userId,
       'payment_date': paymentDate.toIso8601String(),
       'amount': amount,
       'currency': currency,
@@ -40,6 +44,7 @@ class Payment extends Equatable {
       return Payment(
         id: map['id']?.toString() ?? '',
         subscriptionId: map['subscription_id']?.toString() ?? '',
+        userId: map['user_id']?.toString() ?? '',
         paymentDate: map['payment_date'] != null
             ? DateTime.parse(map['payment_date'].toString())
             : DateTime.now(),
@@ -50,6 +55,7 @@ class Payment extends Equatable {
       return Payment(
         id: map['id']?.toString() ?? '',
         subscriptionId: map['subscription_id']?.toString() ?? '',
+        userId: map['user_id']?.toString() ?? '',
         paymentDate: DateTime.now(),
         amount: 0.0,
         currency: 'USD',

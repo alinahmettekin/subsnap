@@ -4,9 +4,144 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:subsnap/core/providers.dart';
 import 'package:subsnap/core/providers/settings_provider.dart';
+import 'package:subsnap/core/services/notification_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    final profileAsync = ref.read(userProfileProvider);
+    final displayName = profileAsync.value?.displayName ?? 'Kullanıcı';
+    
+    final controller = TextEditingController();
+    bool isDeleting = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Hesabı Sil'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bu işlem geri alınamaz! Hesabınız ve tüm verileriniz kalıcı olarak silinecektir.',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Hesabınızı silmek için kullanıcı adınızı yazın:',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  displayName,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Kullanıcı adınızı yazın',
+                    border: OutlineInputBorder(),
+                    hintText: 'Kullanıcı adı',
+                  ),
+                  enabled: !isDeleting,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isDeleting
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                    },
+              child: const Text('İptal'),
+            ),
+            FilledButton(
+              onPressed: isDeleting
+                  ? null
+                  : () async {
+                      if (controller.text.trim() != displayName) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Kullanıcı adı eşleşmiyor!'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() {
+                        isDeleting = true;
+                      });
+
+                      try {
+                        // Hesabı sil (içinde signOut var, bu router'ı tetikleyecek)
+                        await ref.read(authRepositoryProvider).deleteAccount();
+                        
+                        // Dialog'u güvenli bir şekilde kapat
+                        // deleteAccount içinde zaten delay var, bu yüzden burada ekstra delay gerekmez
+                        if (dialogContext.mounted) {
+                          // Navigator'ın unlock olmasını bekle
+                          await Future.delayed(const Duration(milliseconds: 50));
+                          if (dialogContext.mounted && Navigator.of(dialogContext).canPop()) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                        }
+                        
+                        // Router otomatik olarak login sayfasına yönlendirecek
+                        // (auth state değiştiği için)
+                      } catch (e) {
+                        setState(() {
+                          isDeleting = false;
+                        });
+                        if (dialogContext.mounted) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(
+                              content: Text('Hesap silme hatası: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              child: isDeleting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Hesabı Sil'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,6 +170,19 @@ class SettingsScreen extends ConsumerWidget {
                               width: 40,
                               height: 40,
                               fit: BoxFit.cover,
+                              placeholderBuilder: (context) => const SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              errorBuilder: (context, error, stackTrace) {
+                                debugPrint('❌ [SETTINGS] SVG yükleme hatası: $error');
+                                return const SizedBox(
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(Icons.error_outline, size: 20, color: Colors.grey),
+                                );
+                              },
                             ),
                           )
                         : Text(
@@ -54,6 +202,62 @@ class SettingsScreen extends ConsumerWidget {
               ),
               loading: () => const Card(child: ListTile(title: LinearProgressIndicator())),
               error: (e, __) => Card(child: ListTile(title: Text('Hata: $e'))),
+            ),
+            const SizedBox(height: 16),
+
+            // Pro Membership Card
+            profileAsync.when(
+              data: (profile) {
+                final isPro = profile?.hasActivePro ?? false;
+                return Card(
+                  elevation: isPro ? 2 : 0,
+                  color: isPro ? const Color(0xFF6366F1).withValues(alpha: 0.1) : null,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: isPro
+                          ? const Color(0xFF6366F1).withValues(alpha: 0.3)
+                          : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isPro ? const Color(0xFF6366F1) : Colors.grey.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isPro ? Icons.stars : Icons.stars_outlined,
+                        color: isPro ? Colors.white : Colors.grey,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      isPro ? 'SubSnap Pro Üyesi' : 'Pro\'ya Yükselt',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isPro ? const Color(0xFF6366F1) : null,
+                      ),
+                    ),
+                    subtitle: Text(
+                      isPro
+                          ? (profile?.isPro == true
+                              ? 'Sınırsız özelliklerin keyfini çıkarın.'
+                              : 'Aboneliğiniz bitmek üzere, yenileyin.')
+                          : 'Analizler, bildirimler ve daha fazlası.',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      context.push('/home/settings/paywall');
+                    },
+                  ),
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
             ),
             const SizedBox(height: 16),
           ],
@@ -127,6 +331,120 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Achievements
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.emoji_events, color: Colors.amber),
+              title: const Text('Başarımlar'),
+              subtitle: const Text('Kazandığın puanları ve başarımları gör'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                context.push('/home/settings/achievements');
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Bildirim Testleri',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => NotificationService().showTestNotification(),
+                          icon: const Icon(Icons.flash_on),
+                          label: const Text('Anlık Test'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => NotificationService().scheduleOneMinuteTest(),
+                          icon: const Icon(Icons.timer_outlined),
+                          label: const Text('1 Dakika'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Bildirim Ayarları
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Bildirim Ayarları',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Tüm Bildirimler'),
+                    subtitle: const Text('Tüm abonelik hatırlatıcılarını aç/kapat'),
+                    value: ref.watch(appNotificationsProvider),
+                    onChanged: (value) {
+                      ref.read(appNotificationsProvider.notifier).setEnabled(value);
+                      if (!value) {
+                        NotificationService().cancelAllNotifications();
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Uygulama Hatırlatıcıları'),
+                    subtitle: const Text('Uygulamayı uzun süre açmadığında sana hatırlatmamızı ister misin?'),
+                    value: ref.watch(retentionNotificationsProvider),
+                    onChanged: (value) {
+                      ref.read(retentionNotificationsProvider.notifier).setEnabled(value);
+                      if (!value) {
+                        NotificationService().cancelRetentionNotification();
+                      } else {
+                        NotificationService().scheduleRetentionNotification();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Delete Account
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              title: const Text('Hesabı Sil', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                _showDeleteAccountDialog(context, ref);
+              },
             ),
           ),
 

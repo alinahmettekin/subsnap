@@ -65,6 +65,7 @@ class PaymentService {
         final payment = Payment(
           id: const Uuid().v4(),
           subscriptionId: subscription.id,
+          userId: subscription.userId,
           paymentDate: currentPaymentDate,
           amount: subscription.amount,
           currency: subscription.currency,

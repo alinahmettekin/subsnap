@@ -53,12 +53,14 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
     return Scaffold(
       body: widget.child,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAdd,
-        backgroundColor: isDark ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).primaryColor,
-        foregroundColor: isDark ? Theme.of(context).colorScheme.onPrimaryContainer : Colors.white,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: _navigateToAdd,
+              backgroundColor: isDark ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).primaryColor,
+              foregroundColor: isDark ? Theme.of(context).colorScheme.onPrimaryContainer : Colors.white,
+              child: const Icon(Icons.add),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: _onItemTapped,

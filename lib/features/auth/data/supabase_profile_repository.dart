@@ -26,4 +26,11 @@ class SupabaseProfileRepository implements ProfileRepository {
   Future<void> updateProfile(UserProfile profile) async {
     await _client.from('profiles').upsert(profile.toMap());
   }
+
+  Future<void> upgradeToPro(String userId, DateTime expiry) async {
+    await _client.from('profiles').update({
+      'is_pro': true,
+      'pro_expiry': expiry.toIso8601String(),
+    }).eq('id', userId);
+  }
 }

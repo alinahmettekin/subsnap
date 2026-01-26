@@ -68,18 +68,20 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             SizedBox(
               width: double.infinity,
               child: SegmentedButton<AnalyticsPeriod>(
+                showSelectedIcon: false,
                 segments: const [
-                  ButtonSegment(value: AnalyticsPeriod.thisMonth, label: Text('Bu Ay')),
-                  ButtonSegment(value: AnalyticsPeriod.lastMonth, label: Text('Geçen Ay')),
-                  ButtonSegment(value: AnalyticsPeriod.thisYear, label: Text('Yıl')),
-                  ButtonSegment(value: AnalyticsPeriod.custom, label: Text('Özel')),
+                  ButtonSegment(value: AnalyticsPeriod.thisMonth, label: Text('Bu Ay', style: TextStyle(fontSize: 13))),
+                  ButtonSegment(
+                      value: AnalyticsPeriod.lastMonth, label: Text('Geçen Ay', style: TextStyle(fontSize: 13))),
+                  ButtonSegment(value: AnalyticsPeriod.thisYear, label: Text('Yıl', style: TextStyle(fontSize: 13))),
+                  ButtonSegment(value: AnalyticsPeriod.custom, label: Text('Özel', style: TextStyle(fontSize: 13))),
                 ],
                 selected: {period},
                 onSelectionChanged: (value) {
                   ref.read(analyticsPeriodProvider.notifier).state = value.first;
                 },
                 style: SegmentedButton.styleFrom(
-                  visualDensity: VisualDensity.comfortable,
+                  visualDensity: VisualDensity.compact,
                 ),
               ),
             ),
@@ -277,7 +279,7 @@ class _DateInputField extends StatelessWidget {
           color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
           ),
         ),
         child: Column(
@@ -331,7 +333,7 @@ class _Badge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.2),
+            color: Colors.black.withValues(alpha: .2),
             offset: const Offset(0, 4),
             blurRadius: 10,
           ),
@@ -373,17 +375,17 @@ class _SubscriptionDetailRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isTouched ? color.withOpacity(0.08) : Theme.of(context).cardColor,
+        color: isTouched ? color.withValues(alpha: 0.08) : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isTouched ? color.withOpacity(0.4) : Colors.transparent,
+          color: isTouched ? color.withValues(alpha: 0.4) : Colors.transparent,
           width: 1.5,
         ),
         boxShadow: isTouched
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -444,18 +446,18 @@ class _SummaryCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF6366F1), // Modern Indigo
-            const Color(0xFF4F46E5),
+            Color(0xFF6366F1), // Modern Indigo
+            Color(0xFF4F46E5),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
+            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -493,7 +495,7 @@ class _SummaryCardLoading extends StatelessWidget {
       width: double.infinity,
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.05),
+        color: Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
       ),
       child: const Center(child: CircularProgressIndicator()),

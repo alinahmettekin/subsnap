@@ -14,6 +14,8 @@ class Subscription extends Equatable {
   final String? categoryName; // Category name (join'den gelir, nullable)
   final bool isPaused; // Abonelik dondurulmuş mu?
   final DateTime? pausedUntil; // Ne zamana kadar dondurulmuş?
+  final bool notify1DayBefore;
+  final bool notify3DaysBefore;
 
   const Subscription({
     required this.id,
@@ -27,6 +29,8 @@ class Subscription extends Equatable {
     this.categoryName,
     this.isPaused = false,
     this.pausedUntil,
+    this.notify1DayBefore = true,
+    this.notify3DaysBefore = false,
   });
 
   @override
@@ -42,6 +46,8 @@ class Subscription extends Equatable {
         categoryName,
         isPaused,
         pausedUntil,
+        notify1DayBefore,
+        notify3DaysBefore,
       ];
 
   // Helper to copy object
@@ -57,6 +63,8 @@ class Subscription extends Equatable {
     String? categoryName,
     bool? isPaused,
     DateTime? pausedUntil,
+    bool? notify1DayBefore,
+    bool? notify3DaysBefore,
   }) {
     return Subscription(
       id: id ?? this.id,
@@ -70,6 +78,8 @@ class Subscription extends Equatable {
       categoryName: categoryName ?? this.categoryName,
       isPaused: isPaused ?? this.isPaused,
       pausedUntil: pausedUntil ?? this.pausedUntil,
+      notify1DayBefore: notify1DayBefore ?? this.notify1DayBefore,
+      notify3DaysBefore: notify3DaysBefore ?? this.notify3DaysBefore,
     );
   }
 
@@ -86,6 +96,8 @@ class Subscription extends Equatable {
       'category_id': categoryId,
       'is_paused': isPaused,
       'paused_until': pausedUntil?.toIso8601String(),
+      'notify_1_day_before': notify1DayBefore,
+      'notify_3_days_before': notify3DaysBefore,
     };
   }
 
@@ -101,18 +113,17 @@ class Subscription extends Equatable {
           (e) => e.name == map['billing_cycle']?.toString(),
           orElse: () => BillingCycle.monthly,
         ),
-        nextPaymentDate: map['next_payment_date'] != null
-            ? DateTime.parse(map['next_payment_date'].toString())
-            : DateTime.now(),
+        nextPaymentDate:
+            map['next_payment_date'] != null ? DateTime.parse(map['next_payment_date'].toString()) : DateTime.now(),
         categoryId: map['category_id']?.toString(),
-        categoryName: map['category_name']?.toString() ?? 
-            (map['categories'] != null && map['categories'] is Map 
-                ? (map['categories'] as Map)['name']?.toString() 
+        categoryName: map['category_name']?.toString() ??
+            (map['categories'] != null && map['categories'] is Map
+                ? (map['categories'] as Map)['name']?.toString()
                 : null),
         isPaused: (map['is_paused'] as bool?) ?? false,
-        pausedUntil: map['paused_until'] != null
-            ? DateTime.parse(map['paused_until'].toString())
-            : null,
+        pausedUntil: map['paused_until'] != null ? DateTime.parse(map['paused_until'].toString()) : null,
+        notify1DayBefore: (map['notify_1_day_before'] as bool?) ?? true,
+        notify3DaysBefore: (map['notify_3_days_before'] as bool?) ?? false,
       );
     } catch (e) {
       // Return a default subscription on error

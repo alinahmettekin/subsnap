@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:subsnap/core/providers.dart';
+import 'package:subsnap/core/utils/achievement_notification_helper.dart';
+import 'package:subsnap/router.dart';
 import 'package:subsnap/features/auth/domain/entities/user_profile.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
@@ -88,8 +90,25 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
       await profileRepo.updateProfile(profile);
 
+      // Check for profile achievement
+      try {
+        debugPrint('🎯 [PROFILE_SETUP] Calling checkAndAwardProfileAchievement');
+        final achievement = await ref.read(achievementsRepositoryProvider).checkAndAwardProfileAchievement(user.id);
+        if (achievement != null && mounted) {
+          final goRouter = ref.read(routerProvider);
+          AchievementNotificationHelper.showAchievementEarned(
+            context,
+            achievement,
+            onNotificationTap: () => goRouter.push('/home/settings/achievements'),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ [PROFILE_SETUP] Achievement check error: $e');
+      }
+
       // Force refresh the profile and WAIT for it
       ref.invalidate(userProfileProvider);
+      ref.invalidate(achievementsProvider);
       await ref.read(userProfileProvider.future);
 
       if (mounted) {
@@ -155,6 +174,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           padding: EdgeInsets.all(30.0),
                           child: CircularProgressIndicator(),
                         ),
+                        errorBuilder: (context, error, stackTrace) {
+                          debugPrint('❌ [PROFILE_SETUP] SVG yükleme hatası: $error');
+                          return const Icon(Icons.person, size: 60, color: Colors.grey);
+                        },
                       ),
                     ),
                   ),
