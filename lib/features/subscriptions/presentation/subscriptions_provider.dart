@@ -17,17 +17,12 @@ final subscriptionsProvider = FutureProvider.autoDispose<List<Subscription>>((re
 
   debugPrint('✅ [SUBSCRIPTIONS_PROVIDER] Kullanıcı ID: $userId');
 
-  try {
-    debugPrint('📡 [SUBSCRIPTIONS_PROVIDER] Abonelikler getiriliyor...');
-    final repo = ref.read(subscriptionsRepositoryProvider);
-    final subscriptions = await repo.fetchSubscriptions(userId);
-    debugPrint('✅ [SUBSCRIPTIONS_PROVIDER] ${subscriptions.length} abonelik bulundu');
+  debugPrint('📡 [SUBSCRIPTIONS_PROVIDER] Abonelikler getiriliyor...');
+  final repo = ref.read(subscriptionsRepositoryProvider);
+  final subscriptions = await repo.fetchSubscriptions(userId);
+  debugPrint('✅ [SUBSCRIPTIONS_PROVIDER] ${subscriptions.length} abonelik bulundu');
 
-    return subscriptions;
-  } catch (e) {
-    debugPrint('❌ [SUBSCRIPTIONS_PROVIDER] ERROR: $e');
-    return [];
-  }
+  return subscriptions;
 });
 
 // Computed: Total Monthly Cost
