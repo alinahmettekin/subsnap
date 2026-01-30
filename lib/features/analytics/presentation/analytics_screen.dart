@@ -53,6 +53,53 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check PRO status
+    final isPro = ref.watch(isProUserProvider);
+
+    if (!isPro) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Harcama Analizi')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_outline, size: 80, color: Colors.grey),
+                const SizedBox(height: 24),
+                Text(
+                  'Bu özellik Pro kullanıcılara özeldir.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Harcamalarınızı detaylı analiz etmek için Pro plana geçin.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: FilledButton(
+                    onPressed: () {
+                       Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
+                    },
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Pro\'ya Geç'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // PRO user content below
     final analyticsAsync = ref.watch(analyticsDataProvider);
     final period = ref.watch(analyticsPeriodProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
