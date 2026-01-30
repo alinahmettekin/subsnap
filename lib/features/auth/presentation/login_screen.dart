@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:subsnap/core/providers.dart';
+import 'package:subsnap/core/widgets/loading_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -71,6 +72,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Loading durumunda tam ekran loading göster
+    if (_isLoading) {
+      return const LoadingScreen(message: 'Giriş yapılıyor...');
+    }
+
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -109,6 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
                   validator: (val) {
                     if (val == null || val.isEmpty) return 'Gerekli';
                     if (!val.contains('@')) return 'Geçersiz email';
@@ -124,6 +131,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     border: OutlineInputBorder(),
                   ),
                   obscureText: true,
+                  enabled: !_isLoading,
                   validator: (val) {
                     if (val == null || val.isEmpty) return 'Gerekli';
                     if (val.length < 6) return 'En az 6 karakter';
@@ -131,30 +139,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator())
-                else ...[
-                  FilledButton.icon(
-                    onPressed: _handleAuth,
-                    icon: Icon(_isSignUp ? Icons.person_add : Icons.login),
-                    label: Text(_isSignUp ? 'Kayıt Ol' : 'Giriş Yap'),
+                FilledButton.icon(
+                  onPressed: _isLoading ? null : _handleAuth,
+                  icon: Icon(_isSignUp ? Icons.person_add : Icons.login),
+                  label: Text(_isSignUp ? 'Kayıt Ol' : 'Giriş Yap'),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _handleGoogleSignIn,
+                  icon: Image.network(
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                    height: 18,
                   ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: _handleGoogleSignIn,
-                    icon: Image.network(
-                      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
-                      height: 18,
-                    ),
-                    label: const Text('Google ile Devam Et'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                  label: const Text('Google ile Devam Et'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                ],
+                ),
                 const SizedBox(height: 16),
                 TextButton(
-                  onPressed: () => setState(() => _isSignUp = !_isSignUp),
+                  onPressed: _isLoading ? null : () => setState(() => _isSignUp = !_isSignUp),
                   child: Text(
                     _isSignUp ? 'Zaten hesabınız var mı? Giriş Yapın' : 'Hesabınız yok mu? Hemen Kayıt Olun',
                   ),

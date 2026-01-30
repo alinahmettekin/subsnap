@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:subsnap/app.dart';
+import 'package:subsnap/core/constants/revenuecat_config.dart';
 import 'package:subsnap/core/constants/supabase_config.dart';
 import 'package:subsnap/core/services/notification_service.dart';
 
@@ -11,6 +13,18 @@ void main() async {
 
   // Initialize Turkish locale data for date formatting
   await initializeDateFormatting('tr_TR', null);
+
+  // Initialize RevenueCat
+  try {
+    debugPrint('💰 [MAIN] Initializing RevenueCat...');
+    await Purchases.setLogLevel(LogLevel.debug);
+    await Purchases.configure(
+      PurchasesConfiguration(RevenueCatConfig.apiKey),
+    );
+    debugPrint('✅ [MAIN] RevenueCat initialized');
+  } catch (e) {
+    debugPrint('❌ [MAIN] RevenueCat initialization failed: $e');
+  }
 
   // Add error handling for Flutter framework errors FIRST
   FlutterError.onError = (FlutterErrorDetails details) {
