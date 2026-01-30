@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:subsnap/features/payments/presentation/iap_provider.dart';
+import 'package:subsnap/features/subscriptions/data/subscription_service.dart';
+import 'package:subsnap/features/subscriptions/presentation/subscription_provider.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key});
@@ -10,16 +12,13 @@ class PaywallScreen extends ConsumerStatefulWidget {
 }
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
-  String _selectedProductId = proPlanYearlyId;
+  Package? _selectedPackage;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    final iapState = ref.watch(iapProvider);
+    final offeringsAsync = ref.watch(offeringsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final monthlyProduct = iapState.products.where((p) => p.id == proPlanMonthlyId).firstOrNull;
-    final yearlyProduct = iapState.products.where((p) => p.id == proPlanYearlyId).firstOrNull;
-    final selectedProduct = _selectedProductId == proPlanMonthlyId ? monthlyProduct : yearlyProduct;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,62 +85,114 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Monthly Plan Card
-                        _buildPlanCard(
-                          context: context,
-                          title: 'Aylık',
-                          price: monthlyProduct?.price ?? '₺9.99',
-                          subtitle: 'Aydan aya ödeme esnekliği',
-                          isSelected: _selectedProductId == proPlanMonthlyId,
-                          onTap: () => setState(() => _selectedProductId = proPlanMonthlyId),
-                        ),
-                        const SizedBox(height: 12),
+                        offeringsAsync.when(
+                          data: (packages) {
+                            if (packages.isEmpty) {
+                              return const Center(child: Text('Paketler yüklenemedi.'));
+                            }
 
-                        // Yearly Plan Card
-                        _buildPlanCard(
-                          context: context,
-                          title: 'Yıllık',
-                          price: yearlyProduct?.price ?? '₺99.99',
-                          subtitle: 'En iyi değer, yıllık tasarruf',
-                          isSelected: _selectedProductId == proPlanYearlyId,
-                          onTap: () => setState(() => _selectedProductId = proPlanYearlyId),
-                          isBestValue: true,
+                            // Initialize selection if needed
+                            if (_selectedPackage == null && packages.isNotEmpty) {
+                               // Default to annual/yearly if available, or first
+                               final yearly = packages.where((p) => p.packageType == PackageType.annual).firstOrNull;
+                               WidgetsBinding.instance.addPostFrameCallback((_) {
+                                 setState(() {
+                                    _selectedPackage = yearly ?? packages.first;
+                                 });
+                               });
+                            }
+
+                            return Column(
+                              children: packages.map((package) {
+                                final isYearly = package.packageType == PackageType.annual;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12.0),
+                                  child: _buildPlanCard(
+                                    context: context,
+                                    title: package.storeProduct.title,
+                                    price: package.storeProduct.priceString,
+                                    subtitle: package.storeProduct.description,
+                                    isSelected: _selectedPackage?.identifier == package.identifier,
+                                    onTap: () => setState(() => _selectedPackage = package),
+                                    isBestValue: isYearly,
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (err, stack) => Center(child: Text('Hata: $err')),
                         ),
 
                         const SizedBox(height: 32),
-                        if (iapState.errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Text(
-                              iapState.errorMessage!,
-                              style: const TextStyle(color: Colors.red),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
+
                         SizedBox(
                           width: double.infinity,
                           height: 60,
                           child: FilledButton(
-                            onPressed: (iapState.isLoading || selectedProduct == null)
+                            onPressed: (_isLoading || _selectedPackage == null)
                                 ? null
-                                : () => ref.read(iapProvider.notifier).buyPro(selectedProduct),
+                                : () async {
+                                    setState(() => _isLoading = true);
+                                    try {
+                                      final success = await SubscriptionService.purchasePackage(_selectedPackage!);
+                                      if (success) {
+                                        ref.read(isProUserProvider.notifier).state = true;
+                                        if (context.mounted) {
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text("SubSnap Pro'ya hoşgeldiniz!")),
+                                            );
+                                        }
+                                      }
+                                    } finally {
+                                      if (mounted) setState(() => _isLoading = false);
+                                    }
+                                  },
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFF6366F1),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
-                            child: iapState.isLoading
+                            child: _isLoading
                                 ? const CircularProgressIndicator(color: Colors.white)
                                 : Text(
-                                    '${_selectedProductId == proPlanMonthlyId ? "Aylık" : "Yıllık"} Pro\'ya Geç',
+                                    _selectedPackage != null
+                                      ? '${_selectedPackage!.storeProduct.priceString} ile Pro\'ya Geç'
+                                      : 'Plan Seçiniz',
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                   ),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Center(
-                          child: Text(
-                            'İstediğiniz zaman iptal edebilirsiniz.',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: () async {
+                              setState(() => _isLoading = true);
+                              try {
+                                final success = await SubscriptionService.restorePurchases();
+                                if (success) {
+                                  ref.read(isProUserProvider.notifier).state = true;
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Satın alımlar geri yüklendi.")),
+                                    );
+                                  }
+                                } else {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Aktif abonelik bulunamadı.")),
+                                    );
+                                  }
+                                }
+                              } finally {
+                                if (mounted) setState(() => _isLoading = false);
+                              }
+                            },
+                            child: const Text(
+                              'Satın Alımları Geri Yükle',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
