@@ -108,7 +108,7 @@ class Subscription extends Equatable {
         userId: map['user_id']?.toString() ?? '',
         name: map['name']?.toString() ?? '',
         amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
-        currency: map['currency']?.toString() ?? 'USD',
+        currency: map['currency']?.toString() ?? 'TRY',
         billingCycle: BillingCycle.values.firstWhere(
           (e) => e.name == map['billing_cycle']?.toString(),
           orElse: () => BillingCycle.monthly,
@@ -132,7 +132,7 @@ class Subscription extends Equatable {
         userId: map['user_id']?.toString() ?? '',
         name: map['name']?.toString() ?? 'Unknown',
         amount: 0.0,
-        currency: 'USD',
+        currency: 'TRY',
         billingCycle: BillingCycle.monthly,
         nextPaymentDate: DateTime.now(),
         categoryId: null,

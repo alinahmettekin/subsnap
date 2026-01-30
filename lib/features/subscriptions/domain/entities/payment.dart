@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 /// Ödeme kaydı modeli
 class Payment extends Equatable {
   final String id;
-  final String subscriptionId;
+  final String? subscriptionId; // Nullable: Farklı ödemeler için null olabilir
   final String userId;
   final DateTime paymentDate;
   final double amount;
@@ -11,7 +11,7 @@ class Payment extends Equatable {
 
   const Payment({
     required this.id,
-    required this.subscriptionId,
+    this.subscriptionId,
     required this.userId,
     required this.paymentDate,
     required this.amount,
@@ -31,7 +31,7 @@ class Payment extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'subscription_id': subscriptionId,
+      if (subscriptionId != null) 'subscription_id': subscriptionId,
       'user_id': userId,
       'payment_date': paymentDate.toIso8601String(),
       'amount': amount,
@@ -43,22 +43,22 @@ class Payment extends Equatable {
     try {
       return Payment(
         id: map['id']?.toString() ?? '',
-        subscriptionId: map['subscription_id']?.toString() ?? '',
+        subscriptionId: map['subscription_id']?.toString(),
         userId: map['user_id']?.toString() ?? '',
         paymentDate: map['payment_date'] != null
             ? DateTime.parse(map['payment_date'].toString())
             : DateTime.now(),
         amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
-        currency: map['currency']?.toString() ?? 'USD',
+        currency: map['currency']?.toString() ?? 'TRY',
       );
     } catch (e) {
       return Payment(
         id: map['id']?.toString() ?? '',
-        subscriptionId: map['subscription_id']?.toString() ?? '',
+        subscriptionId: map['subscription_id']?.toString(),
         userId: map['user_id']?.toString() ?? '',
         paymentDate: DateTime.now(),
         amount: 0.0,
-        currency: 'USD',
+        currency: 'TRY',
       );
     }
   }

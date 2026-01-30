@@ -10,6 +10,7 @@ import 'package:subsnap/features/subscriptions/domain/entities/category.dart';
 import 'package:subsnap/features/subscriptions/presentation/categories_provider.dart';
 import 'package:subsnap/features/subscriptions/presentation/subscriptions_provider.dart';
 import 'package:subsnap/core/utils/achievement_notification_helper.dart';
+import 'package:subsnap/core/widgets/wheel_date_picker.dart';
 import 'package:subsnap/router.dart';
 import 'package:uuid/uuid.dart';
 
@@ -66,7 +67,7 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
         _categoryController = TextEditingController(text: sub?.categoryName ?? '');
 
         if (sub != null) {
-          _currency = sub.currency;
+          _currency = 'TRY'; // Her zaman TRY kullan
           _billingCycle = sub.billingCycle;
           _nextPaymentDate = sub.nextPaymentDate;
           _isPaused = sub.isPaused;
@@ -297,8 +298,8 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showWheelDatePicker(
+      context,
       initialDate: _nextPaymentDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
@@ -342,51 +343,20 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Amount & Currency Row
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextFormField(
-                        controller: _amountController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
-                          labelText: 'Tutar',
-                          prefixIcon: Icon(Icons.attach_money),
-                        ),
-                        validator: (val) {
-                          if (val == null || val.isEmpty) return 'Gerekli';
-                          if (double.tryParse(val) == null) return 'Geçersiz';
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 1,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _currency,
-                        decoration: const InputDecoration(labelText: 'Currency'),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'TRY', child: Row(children: [Text('₺'), SizedBox(width: 8), Text('TRY')])),
-                          DropdownMenuItem(
-                              value: 'USD', child: Row(children: [Text('\$'), SizedBox(width: 8), Text('USD')])),
-                          DropdownMenuItem(
-                              value: 'EUR', child: Row(children: [Text('€'), SizedBox(width: 8), Text('EUR')])),
-                          DropdownMenuItem(
-                              value: 'GBP', child: Row(children: [Text('£'), SizedBox(width: 8), Text('GBP')])),
-                          DropdownMenuItem(
-                              value: 'JPY', child: Row(children: [Text('¥'), SizedBox(width: 8), Text('JPY')])),
-                        ],
-                        onChanged: (val) {
-                          if (!_isDisposed && mounted && val != null) {
-                            setState(() => _currency = val);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
+                // Amount (TL sabit)
+                TextFormField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Tutar (TL)',
+                    prefixIcon: Icon(Icons.payments),
+                    suffixText: 'TL',
+                  ),
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Gerekli';
+                    if (double.tryParse(val) == null) return 'Geçersiz';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -452,8 +422,8 @@ class _AddSubscriptionScreenState extends ConsumerState<AddSubscriptionScreen> {
                     onChanged: (value) async {
                       if (value) {
                         // Dondurma tarihi seç
-                        final picked = await showDatePicker(
-                          context: context,
+                        final picked = await showWheelDatePicker(
+                          context,
                           initialDate: DateTime.now().add(const Duration(days: 30)),
                           firstDate: DateTime.now(),
                           lastDate: DateTime.now().add(const Duration(days: 365)),

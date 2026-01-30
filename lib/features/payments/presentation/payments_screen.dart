@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:subsnap/features/subscriptions/presentation/payments_provider.dart';
 import 'package:subsnap/features/subscriptions/domain/entities/payment.dart';
@@ -11,8 +13,33 @@ import 'package:subsnap/core/providers.dart';
 import 'package:subsnap/core/utils/currency_formatter.dart';
 
 /// Ödemeler ekranı - Sadece görüntüleme
-class PaymentsScreen extends ConsumerWidget {
+class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key});
+
+  @override
+  ConsumerState<PaymentsScreen> createState() => _PaymentsScreenState();
+}
+
+class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 15 saniyede bir otomatik refresh
+    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+      if (mounted) {
+        await ref.refresh(paymentsProvider);
+        await ref.refresh(subscriptionsProvider);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
 
   SubscriptionTemplate? _findMatchingTemplate(
     String subscriptionName,
@@ -32,7 +59,7 @@ class PaymentsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final paymentsAsync = ref.watch(paymentsProvider);
     final subscriptionsAsync = ref.watch(subscriptionsProvider);
     final templatesAsync = ref.watch(subscriptionTemplatesProvider);
@@ -42,6 +69,10 @@ class PaymentsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Ödemeler'),
         centerTitle: false,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/home/payments/add'),
+        child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -114,24 +145,30 @@ class PaymentsScreen extends ConsumerWidget {
                               (context, index) {
                                 final payment = monthPayments[index];
 
-                                Subscription subscription;
-                                try {
-                                  subscription = subscriptions.firstWhere(
-                                    (sub) => sub.id == payment.subscriptionId,
-                                  );
-                                } catch (e) {
-                                  return const SizedBox.shrink();
+                                // Farklı ödemeler için subscription null olabilir
+                                Subscription? subscription;
+                                if (payment.subscriptionId != null) {
+                                  try {
+                                    subscription = subscriptions.firstWhere(
+                                      (sub) => sub.id == payment.subscriptionId,
+                                    );
+                                  } catch (e) {
+                                    subscription = null;
+                                  }
                                 }
 
                                 // Template mantığına uygun ikonu bul
-                                final matchingTemplate = templatesAsync.maybeWhen(
-                                  data: (templates) => _findMatchingTemplate(subscription.name, templates),
-                                  orElse: () => null,
-                                );
-
-                                final bool hasValidTemplate = matchingTemplate != null &&
-                                    matchingTemplate.id.isNotEmpty &&
-                                    matchingTemplate.iconName.isNotEmpty;
+                                SubscriptionTemplate? matchingTemplate;
+                                bool hasValidTemplate = false;
+                                if (subscription != null) {
+                                  matchingTemplate = templatesAsync.maybeWhen(
+                                    data: (templates) => _findMatchingTemplate(subscription!.name, templates),
+                                    orElse: () => null,
+                                  );
+                                  hasValidTemplate = matchingTemplate != null &&
+                                      matchingTemplate.id.isNotEmpty &&
+                                      matchingTemplate.iconName.isNotEmpty;
+                                }
 
                                 return Dismissible(
                                   key: Key(payment.id),
@@ -181,27 +218,36 @@ class PaymentsScreen extends ConsumerWidget {
                                     child: const Icon(Icons.delete, color: Colors.white),
                                   ),
                                   child: ListTile(
-                                    leading: hasValidTemplate
-                                        ? CircleAvatar(
-                                            backgroundColor: Colors.grey.shade100,
-                                            child: Icon(
-                                              matchingTemplate.iconData,
-                                              color: matchingTemplate.iconColor,
-                                              size: 24,
-                                            ),
-                                          )
+                                    leading: subscription != null
+                                        ? (hasValidTemplate
+                                            ? CircleAvatar(
+                                                backgroundColor: Colors.grey.shade100,
+                                                child: Icon(
+                                                  matchingTemplate!.iconData,
+                                                  color: matchingTemplate.iconColor,
+                                                  size: 24,
+                                                ),
+                                              )
+                                            : CircleAvatar(
+                                                backgroundColor: Colors.grey.shade100,
+                                                child: Text(
+                                                  subscription.name.isNotEmpty ? subscription.name[0].toUpperCase() : '?',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.indigo,
+                                                  ),
+                                                ),
+                                              ))
                                         : CircleAvatar(
                                             backgroundColor: Colors.grey.shade100,
-                                            child: Text(
-                                              subscription.name.isNotEmpty ? subscription.name[0].toUpperCase() : '?',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.indigo,
-                                              ),
+                                            child: const Icon(
+                                              Icons.payment,
+                                              color: Colors.orange,
+                                              size: 24,
                                             ),
                                           ),
                                     title: Text(
-                                      subscription.name,
+                                      subscription?.name ?? 'Farklı Ödeme',
                                       style: const TextStyle(fontWeight: FontWeight.w600),
                                     ),
                                     subtitle: Text(

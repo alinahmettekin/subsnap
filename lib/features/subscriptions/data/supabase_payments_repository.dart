@@ -11,29 +11,13 @@ class SupabasePaymentsRepository implements PaymentsRepository {
   @override
   Future<List<Payment>> fetchPayments(String userId) async {
     try {
-      debugPrint('💳 [PAYMENTS_REPO] Abonelikler getiriliyor (user_id: $userId)');
-      // Önce kullanıcının aboneliklerini al
-      final subscriptionsResponse = await _client.from('subscriptions').select('id').eq('user_id', userId);
-
-      if (subscriptionsResponse.isEmpty) {
-        debugPrint('⚠️ [PAYMENTS_REPO] Abonelik bulunamadı, boş dönülüyor');
-        return [];
-      }
-
-      final subscriptionIds =
-          (subscriptionsResponse as List).map((e) => (e as Map)['id']?.toString()).whereType<String>().toList();
-
-      if (subscriptionIds.isEmpty) {
-        return [];
-      }
-
-      debugPrint('💳 [PAYMENTS_REPO] ${subscriptionIds.length} abonelik için ödemeler isteniyor');
-
-      // Standard filter: use .inFilter() or .filter('col', 'in', list)
+      debugPrint('💳 [PAYMENTS_REPO] Ödemeler getiriliyor (user_id: $userId)');
+      
+      // Kullanıcının tüm ödemelerini getir (subscription_id null olabilir)
       final response = await _client
           .from('payments')
           .select()
-          .inFilter('subscription_id', subscriptionIds) // Correct usage
+          .eq('user_id', userId)
           .order('payment_date', ascending: false);
 
       final data = response as List<dynamic>;

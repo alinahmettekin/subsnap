@@ -7,12 +7,14 @@ import 'package:subsnap/features/auth/presentation/profile_setup_screen.dart';
 import 'package:subsnap/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:subsnap/features/layout/main_layout.dart';
 import 'package:subsnap/features/settings/presentation/settings_screen.dart';
+import 'package:subsnap/features/payments/presentation/add_payment_screen.dart';
 import 'package:subsnap/features/payments/presentation/payments_screen.dart';
 import 'package:subsnap/features/subscriptions/presentation/add_subscription_screen.dart';
 import 'package:subsnap/features/subscriptions/domain/entities/subscription.dart';
 import 'package:subsnap/features/subscriptions/domain/entities/subscription_template.dart';
 import 'package:subsnap/features/analytics/presentation/analytics_screen.dart';
 import 'package:subsnap/features/payments/presentation/paywall_screen.dart';
+import 'package:subsnap/features/payments/presentation/revenuecat_provider.dart';
 import 'package:subsnap/features/achievements/presentation/achievements_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -28,8 +30,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable.value++;
   });
 
+  ref.listen(customerInfoProvider, (_, __) {
+    refreshListenable.value++;
+  });
+
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/login', // Default, redirect'te kontrol edilecek
     debugLogDiagnostics: false,
     refreshListenable: refreshListenable,
     routes: [
@@ -76,6 +82,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/home/payments',
             builder: (context, state) => const PaymentsScreen(),
+            routes: [
+              GoRoute(
+                path: 'add',
+                builder: (context, state) => const AddPaymentScreen(),
+              ),
+            ],
           ),
           GoRoute(
             path: '/home/analytics',
@@ -102,23 +114,25 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
     redirect: (context, state) {
       try {
-        final authState = ref.read(authUserProvider);
-
         final currentPath = state.matchedLocation.isEmpty ? state.uri.path : state.matchedLocation;
         final uriPath = state.uri.path;
+
+        final authState = ref.read(authUserProvider);
+
         debugPrint('🔄 [ROUTER] Redirect check: matched=$currentPath, uri=$uriPath');
 
         final isLoading = authState.isLoading;
         final hasUser = authState.value != null;
         final isLoginRoute = currentPath == '/login' || uriPath == '/login';
         final isSetupRoute = currentPath == '/setup-profile' || uriPath == '/setup-profile';
-        final isHomeRoute = currentPath.startsWith('/home') || uriPath.startsWith('/home');
 
+        // Auth state yükleniyorsa beklemek için null dön (loading overlay gösterilecek)
         if (isLoading) {
-          if (isHomeRoute || isSetupRoute) return null;
-          return null;
+          debugPrint('⏳ [ROUTER] Auth state loading, waiting...');
+          return null; // Loading overlay gösterilecek
         }
 
+        // Auth state yüklendi, kullanıcı kontrolü yap
         if (!hasUser) {
           if (isLoginRoute) return null;
           return '/login';
@@ -127,10 +141,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Eğer kullanıcı varsa profil durumunu kontrol et
         final profileAsync = ref.read(userProfileProvider);
 
-        // ÖNEMLİ: Eğer profil hala yükleniyorsa yönlendirme yapma, bekle.
+        // Profil yükleniyorsa beklemek için null dön (loading overlay gösterilecek)
         if (profileAsync.isLoading) {
-          debugPrint('⏳ [ROUTER] Profile is loading, wait...');
-          return null;
+          debugPrint('⏳ [ROUTER] Profile is loading, waiting...');
+          return null; // Loading overlay gösterilecek
         }
 
         final profile = profileAsync.value;
@@ -146,6 +160,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!needsSetup && isSetupRoute) {
           debugPrint('✅ [ROUTER] Profile complete -> Redirect to /home/dashboard');
           return '/home/dashboard';
+        }
+
+        // Analytics sayfası Pro gerektirir (RevenueCat entitlement)
+        final isAnalyticsRoute = currentPath == '/home/analytics' || uriPath.startsWith('/home/analytics');
+        final isPaywallRoute = currentPath.contains('paywall') || uriPath.contains('paywall');
+        final hasPro = ref.read(hasProProvider);
+        if (isAnalyticsRoute && !hasPro && !isPaywallRoute) {
+          debugPrint('⚠️ [ROUTER] Analytics requires Pro -> Redirect to paywall');
+          return '/home/settings/paywall';
         }
 
         if (isLoginRoute) {

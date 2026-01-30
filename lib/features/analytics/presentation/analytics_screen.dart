@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:subsnap/features/analytics/presentation/analytics_provider.dart';
 import 'package:subsnap/core/utils/currency_formatter.dart';
+import 'package:subsnap/core/widgets/wheel_date_range_picker.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -16,14 +17,17 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   int touchedIndex = -1;
 
   Future<void> _selectCustomRange(BuildContext context, WidgetRef ref) async {
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: ref.read(customDateRangeProvider),
-      confirmText: 'SEÇ',
-      saveText: 'KAYDET',
-      helpText: 'Tarih Aralığı Seçin',
+    final now = DateTime.now();
+    final current = ref.read(customDateRangeProvider);
+    final start = current?.start ?? DateTime(now.year, now.month, 1);
+    final end = current?.end ?? now;
+
+    final DateTimeRange? picked = await showWheelDateRangePicker(
+      context,
+      initialStart: start,
+      initialEnd: end,
+      firstDate: DateTime(2019, 1, 1),
+      lastDate: now,
     );
 
     if (picked != null) {
@@ -87,26 +91,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Özel Tarih Aralığı Seçiciler (Sadece Özel modda görünür)
+            // Özel Tarih Aralığı – tek tıklanabilir satır, alttan tekerlekli seçici açılır (sayfa değişmez)
             if (period == AnalyticsPeriod.custom) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: _DateInputField(
-                      label: 'Başlangıç',
-                      date: ref.watch(customDateRangeProvider)?.start,
-                      onTap: () => _selectCustomRange(context, ref),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _DateInputField(
-                      label: 'Bitiş',
-                      date: ref.watch(customDateRangeProvider)?.end,
-                      onTap: () => _selectCustomRange(context, ref),
-                    ),
-                  ),
-                ],
+              _DateRangeChip(
+                start: ref.watch(customDateRangeProvider)?.start,
+                end: ref.watch(customDateRangeProvider)?.end,
+                onTap: () => _selectCustomRange(context, ref),
               ),
               const SizedBox(height: 24),
             ],
@@ -256,62 +246,68 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   }
 }
 
-class _DateInputField extends StatelessWidget {
-  final String label;
-  final DateTime? date;
+/// Tek satır: "Başlangıç – Bitiş" aralığı. Tıklanınca alttan tekerlekli tarih aralığı seçici açılır.
+class _DateRangeChip extends StatelessWidget {
+  final DateTime? start;
+  final DateTime? end;
   final VoidCallback onTap;
 
-  const _DateInputField({
-    required this.label,
-    this.date,
+  const _DateRangeChip({
+    required this.start,
+    required this.end,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
+    final theme = Theme.of(context);
+    final hasRange = start != null && end != null;
+    final label = hasRange
+        ? '${DateFormat('dd MMM', 'tr_TR').format(start!)} – ${DateFormat('dd MMM yyyy', 'tr_TR').format(end!)}'
+        : 'Tarih aralığı seçin';
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(
+                Icons.date_range_outlined,
+                size: 22,
+                color: theme.colorScheme.primary,
               ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 14,
-                  color: Theme.of(context).primaryColor,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasRange ? 'Özel aralık' : 'Başlangıç – Bitiş seçin',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  date != null ? DateFormat('dd.MM.yyyy').format(date!) : 'Seçiniz',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );

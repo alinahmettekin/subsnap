@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:subsnap/core/providers.dart';
+import 'package:subsnap/features/payments/presentation/revenuecat_provider.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import 'package:subsnap/core/providers/settings_provider.dart';
 import 'package:subsnap/core/services/notification_service.dart';
 
@@ -205,10 +208,10 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // Pro Membership Card
-            profileAsync.when(
-              data: (profile) {
-                final isPro = profile?.hasActivePro ?? false;
+            // Pro Membership Card (RevenueCat)
+            Builder(
+              builder: (context) {
+                final isPro = ref.watch(hasProProvider);
                 return Card(
                   elevation: isPro ? 2 : 0,
                   color: isPro ? const Color(0xFF6366F1).withValues(alpha: 0.1) : null,
@@ -243,21 +246,21 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     subtitle: Text(
                       isPro
-                          ? (profile?.isPro == true
-                              ? 'Sınırsız özelliklerin keyfini çıkarın.'
-                              : 'Aboneliğiniz bitmek üzere, yenileyin.')
+                          ? 'Sınırsız özelliklerin keyfini çıkarın.'
                           : 'Analizler, bildirimler ve daha fazlası.',
                       style: const TextStyle(fontSize: 12),
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      context.push('/home/settings/paywall');
+                      if (isPro) {
+                        RevenueCatUI.presentCustomerCenter();
+                      } else {
+                        context.push('/home/settings/paywall');
+                      }
                     },
                   ),
                 );
               },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
             ),
             const SizedBox(height: 16),
           ],
@@ -432,6 +435,72 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Clear Local Data
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.cleaning_services_outlined),
+              title: const Text('Local Verileri Temizle'),
+              subtitle: const Text('Tüm ayarlar ve cache verilerini temizle'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Local Verileri Temizle'),
+                    content: const Text(
+                      'Tüm ayarlar ve cache verileri temizlenecek. Bu işlem geri alınamaz.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('İptal'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Temizle'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  try {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.clear();
+                    
+                    // Provider'ları resetle
+                    ref.invalidate(showQuickAddProvider);
+                    ref.invalidate(appNotificationsProvider);
+                    ref.invalidate(retentionNotificationsProvider);
+                    
+                    // Bildirimleri iptal et
+                    NotificationService().cancelAllNotifications();
+                    
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Local veriler temizlendi'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Hata: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                }
+              },
             ),
           ),
 

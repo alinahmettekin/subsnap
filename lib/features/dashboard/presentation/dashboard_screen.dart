@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +20,25 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 15 saniyede bir otomatik refresh
+    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      if (mounted) {
+        ref.refresh(subscriptionsProvider);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _navigateToAddWithTemplate(SubscriptionTemplate template) async {
     // Template ile add sayfasına git ve result'ı bekle
     final result = await context.push('/home/dashboard/add', extra: template);

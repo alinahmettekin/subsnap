@@ -34,8 +34,10 @@ class SafeSvgPicture extends StatelessWidget {
             placeholderBuilder: placeholder != null
                 ? (context) => placeholder!
                 : null,
-            onError: (exception, stackTrace) {
-              debugPrint('❌ [SafeSvgPicture] SVG yükleme hatası: $exception');
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('❌ [SafeSvgPicture] SVG yükleme hatası: $error');
+              debugPrint('Stack trace: $stackTrace');
+              return const SizedBox.shrink();
             },
           );
         } catch (e, stackTrace) {

@@ -47,7 +47,7 @@ create table public.subscriptions (
   user_id uuid not null references public.profiles(id) on delete cascade,
   name text not null,
   amount numeric not null,
-  currency text not null default 'USD',
+  currency text not null default 'TRY',
   billing_cycle text not null check (billing_cycle in ('monthly', 'yearly', 'weekly', 'daily')),
   next_payment_date timestamp with time zone not null,
   category_id uuid references public.categories(id) on delete set null,
@@ -288,7 +288,7 @@ $$ language plpgsql security definer;
 -- Create payments table
 create table public.payments (
   id uuid not null default uuid_generate_v4() primary key,
-  subscription_id uuid not null references public.subscriptions(id) on delete cascade,
+  subscription_id uuid references public.subscriptions(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   payment_date timestamp with time zone not null default timezone('utc'::text, now()),
   amount numeric not null,
@@ -381,3 +381,37 @@ on conflict (id) do update set
   description = excluded.description,
   icon_name = excluded.icon_name,
   points = excluded.points;
+
+-- ============================================
+-- ERROR LOG (development / internal test debugging)
+-- ============================================
+-- Uygulama hatalarını (IAP, analytics gate, vb.) burada toplarız.
+-- Internal test sırasında APK çıkmadan Supabase Dashboard'dan loglara bakılabilir.
+
+create table public.error_log (
+  id uuid not null default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) on delete set null,
+  level text not null check (level in ('error', 'warning', 'info')),
+  context text not null,
+  message text not null,
+  stack_trace text,
+  platform text,
+  app_version text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_error_log_created_at on public.error_log(created_at desc);
+create index if not exists idx_error_log_context on public.error_log(context);
+create index if not exists idx_error_log_user_id on public.error_log(user_id);
+
+alter table public.error_log enable row level security;
+
+-- Uygulama (giriş yapmış kullanıcı) log yazabilsin
+create policy "Authenticated users can insert error logs"
+on public.error_log for insert
+with check (auth.uid() is not null);
+
+-- Giriş yapmış kullanıcılar kendi loglarını okuyabilsin (veya tümünü – internal test için)
+create policy "Users can view error logs"
+on public.error_log for select
+using (auth.uid() is not null);
