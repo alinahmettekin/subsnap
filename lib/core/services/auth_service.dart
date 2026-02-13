@@ -1,7 +1,7 @@
 ﻿import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../../utils/constants.dart';
+import '../utils/constants.dart';
 import 'subscription_service.dart';
 
 final authServiceProvider = Provider((ref) => AuthService());
