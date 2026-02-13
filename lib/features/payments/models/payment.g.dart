@@ -1,4 +1,4 @@
-﻿// GENERATED CODE - DO NOT MODIFY BY HAND
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'payment.dart';
 
@@ -17,6 +17,7 @@ _Payment _$PaymentFromJson(Map<String, dynamic> json) => _Payment(
   paidAt: json['paid_at'] == null
       ? null
       : DateTime.parse(json['paid_at'] as String),
+  cardId: json['card_id'] as String?,
 );
 
 Map<String, dynamic> _$PaymentToJson(_Payment instance) => <String, dynamic>{
@@ -28,5 +29,5 @@ Map<String, dynamic> _$PaymentToJson(_Payment instance) => <String, dynamic>{
   'due_date': instance.dueDate.toIso8601String(),
   'status': instance.status,
   'paid_at': instance.paidAt?.toIso8601String(),
+  'card_id': instance.cardId,
 };
-

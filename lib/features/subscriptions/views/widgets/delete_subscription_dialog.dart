@@ -48,12 +48,12 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
                 border: Border.all(
                   color: _selectedOption == DeleteOption.subscriptionOnly
                       ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withOpacity(0.3),
+                      : theme.colorScheme.outline.withValues(alpha: 0.3),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(12),
                 color: _selectedOption == DeleteOption.subscriptionOnly
-                    ? theme.colorScheme.primaryContainer.withOpacity(0.2)
+                    ? theme.colorScheme.primaryContainer.withValues(alpha: 0.2)
                     : Colors.transparent,
               ),
               child: Row(
@@ -95,12 +95,12 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
                 border: Border.all(
                   color: _selectedOption == DeleteOption.subscriptionWithPayments
                       ? theme.colorScheme.error
-                      : theme.colorScheme.outline.withOpacity(0.3),
+                      : theme.colorScheme.outline.withValues(alpha: 0.3),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(12),
                 color: _selectedOption == DeleteOption.subscriptionWithPayments
-                    ? theme.colorScheme.errorContainer.withOpacity(0.2)
+                    ? theme.colorScheme.errorContainer.withValues(alpha: 0.2)
                     : Colors.transparent,
               ),
               child: Row(
@@ -139,7 +139,7 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer.withOpacity(0.3),
+              color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

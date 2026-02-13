@@ -35,7 +35,7 @@ class HeaderOverview extends ConsumerWidget {
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.surfaceContainerHighest.withOpacity(isDark ? 0.9 : 0.95),
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.9 : 0.95),
             theme.colorScheme.surface,
           ],
           begin: Alignment.topCenter,
@@ -68,7 +68,7 @@ class HeaderOverview extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

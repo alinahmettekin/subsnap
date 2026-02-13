@@ -43,15 +43,10 @@ class AuthService {
       print('DEBUG: Attempting Google authentication');
 
       // Authenticate user (v7.x API - only method available)
-      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
-
-      if (googleUser == null) {
-        print('DEBUG: Google Sign-In user is null (cancelled)');
-        throw 'Google giriÅŸi iptal edildi.';
-      }
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
       print('DEBUG: Fetching authentication tokens');
-      final googleAuth = await googleUser.authentication;
+      final googleAuth = googleUser.authentication;
       final idToken = googleAuth.idToken;
 
       print('DEBUG: idToken obtained: ${idToken != null}');

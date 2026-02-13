@@ -5,6 +5,8 @@ import 'dart:io';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/subscription_service.dart';
 import '../../subscriptions/views/paywall_view.dart';
+import '../../cards/views/cards_list_view.dart';
+import '../../cards/providers/card_provider.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -60,6 +62,15 @@ class SettingsView extends ConsumerWidget {
                   title: 'Abonelik Durumu',
                   value: isPremium ? 'Premium' : 'Ücretsiz Plan',
                   iconColor: Colors.amber,
+                ),
+                const SizedBox(height: 8),
+                _SettingsTile(
+                  icon: Icons.credit_card_rounded,
+                  title: 'Ödeme Yöntemlerim',
+                  value: ref
+                      .watch(cardCountProvider)
+                      .when(data: (count) => '$count Kart', loading: () => '...', error: (_, __) => 'Hata'),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardsListView())),
                 ),
                 const SizedBox(height: 8),
                 if (isPremium)

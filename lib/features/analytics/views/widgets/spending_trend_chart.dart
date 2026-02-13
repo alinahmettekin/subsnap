@@ -44,7 +44,7 @@ class SpendingTrendChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +63,8 @@ class SpendingTrendChart extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxY > 0 ? maxY / 3 : 1,
-                  getDrawingHorizontalLine: (value) => FlLine(color: onSurfaceVariant.withOpacity(0.2), strokeWidth: 1),
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: onSurfaceVariant.withValues(alpha: 0.2), strokeWidth: 1),
                 ),
                 titlesData: FlTitlesData(
                   show: true,
@@ -87,7 +88,7 @@ class SpendingTrendChart extends StatelessWidget {
                           ),
                           child: Text(
                             DateFormat('MMM').format(date),
-                            style: TextStyle(color: onSurfaceVariant.withOpacity(0.7), fontSize: 10),
+                            style: TextStyle(color: onSurfaceVariant.withValues(alpha: 0.7), fontSize: 10),
                           ),
                         );
                       },
@@ -110,7 +111,7 @@ class SpendingTrendChart extends StatelessWidget {
                     belowBarData: BarAreaData(
                       show: true,
                       gradient: LinearGradient(
-                        colors: [lineStart.withOpacity(0.2), lineEnd.withOpacity(0.0)],
+                        colors: [lineStart.withValues(alpha: 0.2), lineEnd.withValues(alpha: 0.0)],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),

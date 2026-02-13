@@ -73,8 +73,8 @@ class _SoftBottomBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final baseColor = theme.colorScheme.surface;
     final tintColor = theme.colorScheme.surfaceContainerHighest;
-    final borderColor = theme.colorScheme.outlineVariant.withOpacity(isDark ? 0.35 : 0.5);
-    final shadowColor = theme.colorScheme.shadow.withOpacity(isDark ? 0.35 : 0.18);
+    final borderColor = theme.colorScheme.outlineVariant.withValues(alpha: isDark ? 0.35 : 0.5);
+    final shadowColor = theme.colorScheme.shadow.withValues(alpha: isDark ? 0.35 : 0.18);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
@@ -85,7 +85,10 @@ class _SoftBottomBar extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [baseColor.withOpacity(isDark ? 0.72 : 0.9), tintColor.withOpacity(isDark ? 0.6 : 0.85)],
+              colors: [
+                baseColor.withValues(alpha: isDark ? 0.72 : 0.9),
+                tintColor.withValues(alpha: isDark ? 0.6 : 0.85),
+              ],
             ),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(color: borderColor),
@@ -131,7 +134,7 @@ class _NavBarItem extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final selectedColor = theme.colorScheme.primary;
-    final unselectedColor = theme.colorScheme.onSurface.withOpacity(isDark ? 0.5 : 0.55);
+    final unselectedColor = theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.5 : 0.55);
 
     // Special styling for add button
     if (isAddButton) {
@@ -155,7 +158,7 @@ class _NavBarItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: isSelected ? selectedColor.withOpacity(isDark ? 0.16 : 0.12) : Colors.transparent,
+          color: isSelected ? selectedColor.withValues(alpha: isDark ? 0.16 : 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Icon(icon, color: isSelected ? selectedColor : unselectedColor, size: 28),

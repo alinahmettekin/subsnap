@@ -129,19 +129,21 @@ class _PremiumPlaceholder extends StatelessWidget {
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.3)),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3)),
+            Icon(icon, size: 48, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
             const SizedBox(height: 12),
             Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5)),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ),
@@ -165,7 +167,7 @@ class _PremiumBanner extends StatelessWidget {
           colors: [theme.colorScheme.primaryContainer, theme.colorScheme.secondaryContainer],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -182,7 +184,9 @@ class _PremiumBanner extends StatelessWidget {
           Text(
             'Detaylı harcama trendleri, kategori analizleri ve sınırsız ödeme takibi',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8)),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+            ),
           ),
           const SizedBox(height: 20),
           FilledButton.icon(

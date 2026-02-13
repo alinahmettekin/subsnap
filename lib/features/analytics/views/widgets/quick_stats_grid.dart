@@ -75,7 +75,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,7 +85,7 @@ class _StatCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(title, style: TextStyle(color: onSurfaceVariant, fontSize: 13)),
-              Icon(icon, color: theme.colorScheme.primary.withOpacity(0.8), size: 18),
+              Icon(icon, color: theme.colorScheme.primary.withValues(alpha: 0.8), size: 18),
             ],
           ),
           const SizedBox(height: 12),

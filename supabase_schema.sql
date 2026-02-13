@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable RLS for profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can manage their own profile" ON profiles;
@@ -30,14 +29,15 @@ DROP POLICY IF EXISTS "Users can manage their own categories" ON categories;
 CREATE POLICY "Users can manage their own categories" ON categories
     FOR ALL USING (user_id IS NULL OR user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
+CREATE UNIQUE INDEX IF NOT EXISTS categories_name_default_key ON categories (name) WHERE user_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS categories_name_user_key ON categories (name, user_id) WHERE user_id IS NOT NULL;
+
 -- 3. Create Cards table
 CREATE TABLE IF NOT EXISTS cards (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     card_name TEXT NOT NULL,
     last_four VARCHAR(4) NOT NULL,
-    card_type TEXT,
-    expiry_date TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    card_id UUID REFERENCES cards(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     amount NUMERIC(10, 2) NOT NULL,
     currency VARCHAR(3) DEFAULT 'USD',
@@ -85,8 +86,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'trial')),
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    card_id UUID REFERENCES cards(id) ON DELETE SET NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
@@ -99,11 +99,11 @@ CREATE POLICY "Users can manage their own subscriptions" ON subscriptions
 CREATE TABLE IF NOT EXISTS payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     subscription_id UUID REFERENCES subscriptions(id) ON DELETE CASCADE NOT NULL,
+    card_id UUID REFERENCES cards(id) ON DELETE SET NULL,
     amount NUMERIC(10, 2) NOT NULL,
     paid_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     status TEXT DEFAULT 'paid' CHECK (status IN ('paid', 'skipped')),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    card_id UUID REFERENCES cards(id) ON DELETE SET NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
@@ -118,7 +118,9 @@ CREATE POLICY "Users can manage their own payments" ON payments
         )
     );
 
--- 6. Trigger for updated_at
+-- 6. Functions & Triggers
+
+-- Trigger for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -136,7 +138,7 @@ CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions FO
 DROP TRIGGER IF EXISTS update_payments_updated_at ON payments;
 CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
--- 7. Trigger for automatic profile creation on signup
+-- Trigger for automatic profile creation on signup
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -151,11 +153,12 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE PROCEDURE handle_new_user();
 
--- 8. Insert default categories
+-- 7. Insert default categories (Idempotent)
 INSERT INTO categories (name, icon, color) VALUES
 ('Entertainment', 'movie', '#FF5733'),
 ('Streaming', 'play_circle', '#E74C3C'),
 ('Software', 'code', '#3498DB'),
 ('Utility', 'settings', '#F1C40F'),
 ('Education', 'school', '#2ECC71'),
-('Other', 'more_horiz', '#95A5A6');
+('Other', 'more_horiz', '#95A5A6')
+ON CONFLICT (name) WHERE user_id IS NULL DO NOTHING;

@@ -1,4 +1,4 @@
-﻿// GENERATED CODE - DO NOT MODIFY BY HAND
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'payment_service.dart';
 
@@ -87,7 +87,7 @@ final class UpcomingPaymentsProvider
   }
 }
 
-String _$upcomingPaymentsHash() => r'd66139b5b1f06e9be97ba5adc86e3568c95e7857';
+String _$upcomingPaymentsHash() => r'55d62591b381e4076cd978b8b85ee7ab38e4d0c0';
 
 @ProviderFor(paymentHistory)
 final paymentHistoryProvider = PaymentHistoryProvider._();
@@ -127,4 +127,3 @@ final class PaymentHistoryProvider
 }
 
 String _$paymentHistoryHash() => r'1664cc627c4938d5ae22455fcb62925112bfc185';
-

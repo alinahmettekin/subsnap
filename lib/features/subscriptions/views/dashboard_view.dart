@@ -77,7 +77,7 @@ class DashboardView extends ConsumerWidget {
                                 'Abonelik Kullanımı',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                                 ),
                               ),
                               Text(
@@ -137,7 +137,7 @@ class DashboardView extends ConsumerWidget {
                                             Text(
                                               'Sınırsız abonelik ekle',
                                               style: theme.textTheme.bodySmall?.copyWith(
-                                                color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
+                                                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                                               ),
                                             ),
                                           ],
@@ -165,7 +165,7 @@ class DashboardView extends ConsumerWidget {
                         'Abonelikler',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface.withOpacity(0.8),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                         ),
                       ),
                       TextButton(onPressed: () {}, child: const Text('Hepsini Gör')),
@@ -180,7 +180,11 @@ class DashboardView extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.subscriptions_outlined, size: 64, color: theme.colorScheme.primary.withOpacity(0.2)),
+                        Icon(
+                          Icons.subscriptions_outlined,
+                          size: 64,
+                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                        ),
                         const SizedBox(height: 16),
                         const Text('Henüz abonelik eklemediniz.'),
                       ],

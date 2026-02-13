@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:subsnap/core/theme/app_theme.dart';
@@ -27,6 +28,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'SubSnap',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('tr', 'TR'), Locale('en', 'US')],
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
@@ -34,4 +41,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

@@ -1,4 +1,4 @@
-﻿// GENERATED CODE - DO NOT MODIFY BY HAND
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'subscription_service.dart';
 
@@ -93,4 +93,3 @@ abstract class _$PremiumStatus extends $Notifier<bool> {
     element.handleCreate(ref, build);
   }
 }
-

@@ -1,7 +1,8 @@
-import 'dart:developer';
+﻿import 'dart:developer';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/payment.dart';
+import '../../subscriptions/providers/subscription_provider.dart';
 
 part 'payment_service.g.dart';
 
@@ -45,6 +46,31 @@ class PaymentService {
     }
   }
 
+  Future<void> createPayment(Payment payment) async {
+    // Ensure we don't send the temporary ID to the database if we're inserting
+    // We let Supabase generate the ID or generate a real UUID here.
+    // Best practice: Let Supabase handle ID or use UUID v4.
+    // For simplicity, we'll exclude ID from the insert map if it's temporary,
+    // but Payment.toJson() includes it.
+    // So we'll create a map and remove ID if it starts with 'temp_'.
+
+    final data = payment.toJson();
+    if (payment.id.startsWith('temp_')) {
+      data.remove('id');
+    }
+
+    // Set paid_at to now if not set
+    if (payment.paidAt == null) {
+      data['paid_at'] = DateTime.now().toIso8601String();
+    }
+
+    // Set status to paid
+    data['status'] = 'paid';
+
+    await _client.from('payments').insert(data);
+  }
+
+  // Deprecated: Use createPayment instead for new flows
   Future<void> markAsPaid(String paymentId) async {
     await _client
         .from('payments')
@@ -68,7 +94,28 @@ PaymentService paymentService(Ref ref) {
 
 @riverpod
 Future<List<Payment>> upcomingPayments(Ref ref) async {
-  return ref.watch(paymentServiceProvider).getPayments(history: false);
+  final subscriptions = await ref.watch(subscriptionsProvider.future);
+  final payments = <Payment>[];
+
+  for (final sub in subscriptions) {
+    payments.add(
+      Payment(
+        id: 'temp_${sub.id}_${sub.nextBillingDate.millisecondsSinceEpoch}', // Temporary ID
+        userId: sub.userId,
+        subscriptionId: sub.id,
+        amount: sub.price,
+        currency: sub.currency,
+        dueDate: sub.nextBillingDate,
+        status: 'pending',
+        cardId: sub.cardId,
+      ),
+    );
+  }
+
+  // Sort by due date (soonest first)
+  payments.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+
+  return payments;
 }
 
 @riverpod

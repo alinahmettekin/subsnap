@@ -1,5 +1,4 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:subsnap/features/subscriptions/models/subscription.dart';
 import 'package:subsnap/features/payments/models/payment.dart';
 
@@ -60,8 +59,8 @@ class UpcomingPaymentsList extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isUrgent
-                    ? theme.colorScheme.error.withOpacity(0.35)
-                    : theme.colorScheme.outlineVariant.withOpacity(0.4),
+                    ? theme.colorScheme.error.withValues(alpha: 0.35)
+                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
               ),
             ),
             child: Row(
@@ -69,7 +68,10 @@ class UpcomingPaymentsList extends StatelessWidget {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(color: accent.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Icon(isUrgent ? Icons.priority_high_rounded : Icons.payment_rounded, color: accent),
                 ),
                 const SizedBox(width: 16),
@@ -105,9 +107,9 @@ class UpcomingPaymentsList extends StatelessWidget {
             margin: const EdgeInsets.only(top: 8),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [

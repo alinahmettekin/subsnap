@@ -1,5 +1,4 @@
 ﻿import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
 
 part 'payment.freezed.dart';
 part 'payment.g.dart';
@@ -20,4 +19,3 @@ abstract class Payment with _$Payment {
 
   factory Payment.fromJson(Map<String, dynamic> json) => _$PaymentFromJson(json);
 }
-

@@ -1,4 +1,4 @@
-﻿// GENERATED CODE - DO NOT MODIFY BY HAND
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'subscription_provider.dart';
 
@@ -138,4 +138,3 @@ final class CategoriesProvider
 }
 
 String _$categoriesHash() => r'52797f6fe8604f6cd89142f9cae9c5275e2e2821';
-

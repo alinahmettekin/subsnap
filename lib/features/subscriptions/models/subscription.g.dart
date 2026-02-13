@@ -1,4 +1,4 @@
-﻿// GENERATED CODE - DO NOT MODIFY BY HAND
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'subscription.dart';
 
@@ -20,6 +20,7 @@ _Subscription _$SubscriptionFromJson(Map<String, dynamic> json) =>
       createdAt: json['created_at'] == null
           ? null
           : DateTime.parse(json['created_at'] as String),
+      cardId: json['card_id'] as String?,
     );
 
 Map<String, dynamic> _$SubscriptionToJson(_Subscription instance) =>
@@ -34,5 +35,5 @@ Map<String, dynamic> _$SubscriptionToJson(_Subscription instance) =>
       'next_payment_date': instance.nextBillingDate.toIso8601String(),
       'status': instance.status,
       'created_at': instance.createdAt?.toIso8601String(),
+      'card_id': instance.cardId,
     };
-
