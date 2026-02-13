@@ -1,6 +1,7 @@
 ﻿import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../utils/constants.dart';
 import 'subscription_service.dart';
 
 final authServiceProvider = Provider((ref) => AuthService());
@@ -31,7 +32,7 @@ class AuthService {
   Future<void> signInWithGoogle() async {
     print('DEBUG: Starting Google Sign-In sequence');
     // Not: Web Client ID, Supabase Dashboard > Auth > Providers > Google kÄ±smÄ±ndan alÄ±nmalÄ±.
-    const webClientId = '1094968780176-jb74d577pdoro7tpq92r61nvki048pqa.apps.googleusercontent.com';
+    const webClientId = AppConstants.googleWebClientId;
 
     try {
       final googleSignIn = GoogleSignIn.instance;
