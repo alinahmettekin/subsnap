@@ -23,7 +23,7 @@ class SubscriptionService {
     print('DEBUG: All entitlements: ${customerInfo.entitlements.all.keys}');
 
     // Check for specific entitlement identifier provided by RevenueCat logs
-    final isPremium = customerInfo.entitlements.active.containsKey('subsnap');
+    final isPremium = customerInfo.entitlements.active.containsKey(AppConstants.entitlementId);
 
     print('DEBUG: Premium status: $isPremium');
     return isPremium;

@@ -56,9 +56,7 @@ class SubscriptionRepository {
   }
 
   Future<void> deleteSubscriptionWithPayments(String id) async {
-    // First delete all payments associated with this subscription
-    await _client.from('payments').delete().eq('subscription_id', id);
-    // Then delete the subscription itself
+    // Database 'ON DELETE CASCADE' will automatically delete associated payments.
     await _client.from('subscriptions').delete().eq('id', id);
   }
 }
