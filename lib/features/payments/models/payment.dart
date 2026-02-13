@@ -15,6 +15,7 @@ abstract class Payment with _$Payment {
     @JsonKey(name: 'due_date') required DateTime dueDate,
     required String status, // 'pending', 'paid', 'overdue', 'skipped'
     @JsonKey(name: 'paid_at') DateTime? paidAt,
+    @JsonKey(name: 'card_id') String? cardId,
   }) = _Payment;
 
   factory Payment.fromJson(Map<String, dynamic> json) => _$PaymentFromJson(json);

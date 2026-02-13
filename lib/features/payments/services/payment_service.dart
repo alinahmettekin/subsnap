@@ -1,4 +1,5 @@
-﻿import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:developer';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/payment.dart';
 
@@ -25,24 +26,21 @@ class PaymentService {
     }
 
     try {
-      print('DEBUG: Executing query for payments (userId: $userId, history: $history)...');
       final response = await query;
-      print('DEBUG: Query successful. Response data: $response');
 
       final list = (response as List).map((json) {
         try {
           return Payment.fromJson(json);
         } catch (e) {
-          print('DEBUG: Error parsing payment JSON: $json. Error: $e');
+          log('Error parsing payment JSON', error: e, name: 'PaymentService');
           rethrow;
         }
       }).toList();
 
-      print('DEBUG: Parsed ${list.length} payments.');
+      log('Parsed ${list.length} payments.', name: 'PaymentService');
       return list;
     } catch (e, stack) {
-      print('DEBUG: Error in getPayments: $e');
-      print('DEBUG: Stacktrace: $stack');
+      log('Error in getPayments', error: e, stackTrace: stack, name: 'PaymentService');
       rethrow;
     }
   }

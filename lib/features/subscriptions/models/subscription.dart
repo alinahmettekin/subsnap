@@ -16,6 +16,7 @@ abstract class Subscription with _$Subscription {
     @JsonKey(name: 'next_payment_date') required DateTime nextBillingDate,
     required String status,
     @JsonKey(name: 'created_at') DateTime? createdAt,
+    @JsonKey(name: 'card_id') String? cardId,
   }) = _Subscription;
 
   factory Subscription.fromJson(Map<String, dynamic> json) => _$SubscriptionFromJson(json);

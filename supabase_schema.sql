@@ -30,7 +30,49 @@ DROP POLICY IF EXISTS "Users can manage their own categories" ON categories;
 CREATE POLICY "Users can manage their own categories" ON categories
     FOR ALL USING (user_id IS NULL OR user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
--- 3. Create Subscriptions table
+-- 3. Create Cards table
+CREATE TABLE IF NOT EXISTS cards (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    card_name TEXT NOT NULL,
+    last_four VARCHAR(4) NOT NULL,
+    card_type TEXT,
+    expiry_date TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE cards ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can manage their own cards" ON cards;
+CREATE POLICY "Users can manage their own cards" ON cards
+    FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- Function to check card limit for non-premium users
+CREATE OR REPLACE FUNCTION check_card_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+    card_count INTEGER;
+    is_premium_user BOOLEAN;
+BEGIN
+    SELECT is_premium INTO is_premium_user FROM profiles WHERE id = NEW.user_id;
+
+    IF NOT COALESCE(is_premium_user, FALSE) THEN
+        SELECT COUNT(*) INTO card_count FROM cards WHERE user_id = NEW.user_id;
+        IF card_count >= 2 THEN
+            RAISE EXCEPTION 'Non-premium users can only have a maximum of 2 cards.';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS enforce_card_limit ON cards;
+CREATE TRIGGER enforce_card_limit
+    BEFORE INSERT ON cards
+    FOR EACH ROW EXECUTE PROCEDURE check_card_limit();
+
+-- 4. Create Subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
@@ -43,7 +85,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'trial')),
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    card_id UUID REFERENCES cards(id) ON DELETE SET NULL
 );
 
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
@@ -52,14 +95,15 @@ DROP POLICY IF EXISTS "Users can manage their own subscriptions" ON subscription
 CREATE POLICY "Users can manage their own subscriptions" ON subscriptions
     FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
--- 4. Create Payments history table
+-- 5. Create Payments history table
 CREATE TABLE IF NOT EXISTS payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     subscription_id UUID REFERENCES subscriptions(id) ON DELETE CASCADE NOT NULL,
     amount NUMERIC(10, 2) NOT NULL,
     paid_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     status TEXT DEFAULT 'paid' CHECK (status IN ('paid', 'skipped')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    card_id UUID REFERENCES cards(id) ON DELETE SET NULL
 );
 
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
@@ -74,7 +118,7 @@ CREATE POLICY "Users can manage their own payments" ON payments
         )
     );
 
--- 5. Trigger for updated_at
+-- 6. Trigger for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -89,7 +133,10 @@ CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW
 DROP TRIGGER IF EXISTS update_subscriptions_updated_at ON subscriptions;
 CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
--- 6. Trigger for automatic profile creation on signup
+DROP TRIGGER IF EXISTS update_payments_updated_at ON payments;
+CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- 7. Trigger for automatic profile creation on signup
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -104,7 +151,7 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE PROCEDURE handle_new_user();
 
--- 7. Insert default categories
+-- 8. Insert default categories
 INSERT INTO categories (name, icon, color) VALUES
 ('Entertainment', 'movie', '#FF5733'),
 ('Streaming', 'play_circle', '#E74C3C'),
