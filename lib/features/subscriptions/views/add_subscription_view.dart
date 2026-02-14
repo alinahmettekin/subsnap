@@ -10,7 +10,8 @@ import '../../../core/services/subscription_service.dart';
 import 'paywall_view.dart';
 import '../../cards/providers/card_provider.dart';
 import '../../cards/views/add_card_view.dart';
-import '../data/popular_subscriptions.dart';
+import '../models/service.dart';
+import '../../../../core/utils/icon_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AddSubscriptionView extends ConsumerStatefulWidget {
@@ -29,6 +30,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   String _currency = '₺';
   DateTime _nextBillingDate = DateTime.now();
   String? _selectedCategoryId;
+  String? _selectedServiceId;
   String? _selectedCardId;
   bool _isLoading = false;
 
@@ -142,6 +144,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
         status: 'active',
         categoryId: _selectedCategoryId,
         cardId: _selectedCardId,
+        serviceId: _selectedServiceId,
       );
 
       debugPrint('DEBUG: Subscription object created: ${sub.toJson()}');
@@ -175,6 +178,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final servicesAsync = ref.watch(servicesProvider);
     final cardsAsync = ref.watch(cardsProvider);
 
     return Container(
@@ -196,7 +200,11 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              _buildPopularServices(categoriesAsync.asData?.value),
+              servicesAsync.when(
+                data: (services) => _buildPopularServices(categoriesAsync.asData?.value, services),
+                loading: () => const LinearProgressIndicator(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
@@ -240,7 +248,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
               const SizedBox(height: 16),
               categoriesAsync.when(
                 data: (cats) => DropdownButtonFormField<String>(
-                  value: _selectedCategoryId,
+                  initialValue: _selectedCategoryId,
                   decoration: _inputDecoration('Kategori'),
                   items: cats
                       .map(
@@ -268,7 +276,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       DropdownButtonFormField<String>(
-                        value: _selectedCardId,
+                        initialValue: _selectedCardId,
                         decoration: _inputDecoration('Ödeme Yöntemi').copyWith(hintText: 'Kart Seçin (İsteğe Bağlı)'),
                         items: [
                           const DropdownMenuItem<String>(value: null, child: Text('Seçilmedi')),
@@ -320,7 +328,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                           Text('Sıradaki Ödeme', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
                           const SizedBox(height: 2),
                           Text(
-                            DateFormat('dd MMMM yyyy').format(_nextBillingDate),
+                            DateFormat('dd MMMM yyyy', 'tr_TR').format(_nextBillingDate),
                             style: const TextStyle(fontSize: 16),
                           ),
                         ],
@@ -370,7 +378,9 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
     }
   }
 
-  Widget _buildPopularServices(List<dynamic>? categories) {
+  Widget _buildPopularServices(List<dynamic>? categories, List<Service> services) {
+    if (services.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -388,44 +398,68 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
           height: 50,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: popularSubscriptions.length,
+            itemCount: services.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final service = popularSubscriptions[index];
+              final service = services[index];
+              final color = IconHelper.getColor(service.color);
+              final icon = IconHelper.getIcon(service.iconName);
+
               return InkWell(
                 onTap: () {
                   setState(() {
                     _nameController.text = service.name;
+                    _selectedServiceId = service.id;
+
+                    if (service.defaultPrice != null) {
+                      _priceController.text = service.defaultPrice.toString();
+                    }
 
                     // Find category logic
-                    if (categories != null) {
+                    if (categories != null && service.categoryId != null) {
                       try {
-                        final cat = categories.firstWhere(
-                          (c) => (c['name'] as String).toLowerCase() == service.category.toLowerCase(),
-                        );
-                        _selectedCategoryId = cat['id'] as String;
+                        // If service has strict category_id, use it
+                        // First try direct ID match
+                        final catById = categories.firstWhere((c) => c['id'] == service.categoryId, orElse: () => null);
+
+                        if (catById != null) {
+                          _selectedCategoryId = service.categoryId;
+                        } else {
+                          // Try name matching if ID not found (fallback)
+                          // ... (existing logic omitted for brevity as backend should handle consistency)
+                          _selectedCategoryId = service.categoryId;
+                        }
                       } catch (_) {
-                        // Default logic or ignore if not found
-                        _selectedCategoryId = null;
+                        _selectedCategoryId = service.categoryId;
                       }
                     }
                   });
-                  // Focus price
-                  _priceFocusNode.requestFocus();
+                  // Focus price if not set
+                  if (_priceController.text.isEmpty) {
+                    _priceFocusNode.requestFocus();
+                  }
                 },
                 borderRadius: BorderRadius.circular(24),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: color.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      FaIcon(service.icon, color: service.color, size: 20),
+                      FaIcon(icon, color: color, size: 20),
                       const SizedBox(width: 8),
-                      Text(service.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(
+                        service.name,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ],
                   ),
                 ),

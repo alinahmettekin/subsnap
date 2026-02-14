@@ -138,3 +138,42 @@ final class CategoriesProvider
 }
 
 String _$categoriesHash() => r'52797f6fe8604f6cd89142f9cae9c5275e2e2821';
+
+@ProviderFor(services)
+final servicesProvider = ServicesProvider._();
+
+final class ServicesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Service>>,
+          List<Service>,
+          FutureOr<List<Service>>
+        >
+    with $FutureModifier<List<Service>>, $FutureProvider<List<Service>> {
+  ServicesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'servicesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$servicesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<Service>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<Service>> create(Ref ref) {
+    return services(ref);
+  }
+}
+
+String _$servicesHash() => r'2434070498db4e935ca3820dac9140b6cee1f2f4';

@@ -7,6 +7,7 @@ import '../../auth/views/settings_view.dart';
 import 'widgets/delete_subscription_dialog.dart';
 import 'paywall_view.dart';
 import '../../../core/services/subscription_service.dart';
+import 'widgets/subscription_icon.dart';
 
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
@@ -249,7 +250,7 @@ class DashboardView extends ConsumerWidget {
               _buildSummaryIndicator(
                 context,
                 'Sıradaki',
-                subs.isNotEmpty ? DateFormat('dd MMM').format(subs.first.nextBillingDate) : '-',
+                subs.isNotEmpty ? DateFormat('dd MMM', 'tr_TR').format(subs.first.nextBillingDate) : '-',
               ),
             ],
           ),
@@ -334,20 +335,7 @@ class _SubscriptionListTile extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         child: Row(
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withAlpha(150),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Text(
-                  subscription.name[0].toUpperCase(),
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: theme.colorScheme.primary),
-                ),
-              ),
-            ),
+            SubscriptionIcon(subscription: subscription),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -356,7 +344,7 @@ class _SubscriptionListTile extends ConsumerWidget {
                   Text(subscription.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 2),
                   Text(
-                    'Yenileme: ${DateFormat('dd MMM').format(subscription.nextBillingDate)}',
+                    'Yenileme: ${DateFormat('dd MMM', 'tr_TR').format(subscription.nextBillingDate)}',
                     style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -373,12 +361,26 @@ class _SubscriptionListTile extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subscription.billingCycle == 'monthly' ? 'aylık' : 'yıllık',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      subscription.billingCycle == 'monthly' ? 'aylık' : 'yıllık',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () => SubscriptionService.manageSubscriptions(),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(Icons.open_in_new_rounded, size: 16, color: theme.colorScheme.primary),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

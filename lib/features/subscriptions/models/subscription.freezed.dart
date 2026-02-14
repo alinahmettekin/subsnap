@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Subscription {
 
- String get id;@JsonKey(name: 'user_id') String get userId; String get name;@JsonKey(name: 'amount') double get price; String get currency;@JsonKey(name: 'category_id') String? get categoryId;@JsonKey(name: 'billing_period') String get billingCycle;@JsonKey(name: 'next_payment_date') DateTime get nextBillingDate; String get status;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'card_id') String? get cardId;
+ String get id;@JsonKey(name: 'user_id') String get userId; String get name;@JsonKey(name: 'amount') double get price; String get currency;@JsonKey(name: 'category_id') String? get categoryId;@JsonKey(name: 'billing_period') String get billingCycle;@JsonKey(name: 'next_payment_date') DateTime get nextBillingDate; String get status;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'card_id') String? get cardId;@JsonKey(name: 'service_id') String? get serviceId;
 /// Create a copy of Subscription
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $SubscriptionCopyWith<Subscription> get copyWith => _$SubscriptionCopyWithImpl<S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Subscription&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.billingCycle, billingCycle) || other.billingCycle == billingCycle)&&(identical(other.nextBillingDate, nextBillingDate) || other.nextBillingDate == nextBillingDate)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.cardId, cardId) || other.cardId == cardId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Subscription&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.billingCycle, billingCycle) || other.billingCycle == billingCycle)&&(identical(other.nextBillingDate, nextBillingDate) || other.nextBillingDate == nextBillingDate)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.cardId, cardId) || other.cardId == cardId)&&(identical(other.serviceId, serviceId) || other.serviceId == serviceId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,name,price,currency,categoryId,billingCycle,nextBillingDate,status,createdAt,cardId);
+int get hashCode => Object.hash(runtimeType,id,userId,name,price,currency,categoryId,billingCycle,nextBillingDate,status,createdAt,cardId,serviceId);
 
 @override
 String toString() {
-  return 'Subscription(id: $id, userId: $userId, name: $name, price: $price, currency: $currency, categoryId: $categoryId, billingCycle: $billingCycle, nextBillingDate: $nextBillingDate, status: $status, createdAt: $createdAt, cardId: $cardId)';
+  return 'Subscription(id: $id, userId: $userId, name: $name, price: $price, currency: $currency, categoryId: $categoryId, billingCycle: $billingCycle, nextBillingDate: $nextBillingDate, status: $status, createdAt: $createdAt, cardId: $cardId, serviceId: $serviceId)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $SubscriptionCopyWith<$Res>  {
   factory $SubscriptionCopyWith(Subscription value, $Res Function(Subscription) _then) = _$SubscriptionCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'user_id') String userId, String name,@JsonKey(name: 'amount') double price, String currency,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'billing_period') String billingCycle,@JsonKey(name: 'next_payment_date') DateTime nextBillingDate, String status,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'card_id') String? cardId
+ String id,@JsonKey(name: 'user_id') String userId, String name,@JsonKey(name: 'amount') double price, String currency,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'billing_period') String billingCycle,@JsonKey(name: 'next_payment_date') DateTime nextBillingDate, String status,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'card_id') String? cardId,@JsonKey(name: 'service_id') String? serviceId
 });
 
 
@@ -65,7 +65,7 @@ class _$SubscriptionCopyWithImpl<$Res>
 
 /// Create a copy of Subscription
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? name = null,Object? price = null,Object? currency = null,Object? categoryId = freezed,Object? billingCycle = null,Object? nextBillingDate = null,Object? status = null,Object? createdAt = freezed,Object? cardId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? name = null,Object? price = null,Object? currency = null,Object? categoryId = freezed,Object? billingCycle = null,Object? nextBillingDate = null,Object? status = null,Object? createdAt = freezed,Object? cardId = freezed,Object? serviceId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -78,6 +78,7 @@ as String,nextBillingDate: null == nextBillingDate ? _self.nextBillingDate : nex
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,cardId: freezed == cardId ? _self.cardId : cardId // ignore: cast_nullable_to_non_nullable
+as String?,serviceId: freezed == serviceId ? _self.serviceId : serviceId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -163,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId,  String name, @JsonKey(name: 'amount')  double price,  String currency, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'billing_period')  String billingCycle, @JsonKey(name: 'next_payment_date')  DateTime nextBillingDate,  String status, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'card_id')  String? cardId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId,  String name, @JsonKey(name: 'amount')  double price,  String currency, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'billing_period')  String billingCycle, @JsonKey(name: 'next_payment_date')  DateTime nextBillingDate,  String status, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'card_id')  String? cardId, @JsonKey(name: 'service_id')  String? serviceId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Subscription() when $default != null:
-return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_that.categoryId,_that.billingCycle,_that.nextBillingDate,_that.status,_that.createdAt,_that.cardId);case _:
+return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_that.categoryId,_that.billingCycle,_that.nextBillingDate,_that.status,_that.createdAt,_that.cardId,_that.serviceId);case _:
   return orElse();
 
 }
@@ -184,10 +185,10 @@ return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId,  String name, @JsonKey(name: 'amount')  double price,  String currency, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'billing_period')  String billingCycle, @JsonKey(name: 'next_payment_date')  DateTime nextBillingDate,  String status, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'card_id')  String? cardId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId,  String name, @JsonKey(name: 'amount')  double price,  String currency, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'billing_period')  String billingCycle, @JsonKey(name: 'next_payment_date')  DateTime nextBillingDate,  String status, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'card_id')  String? cardId, @JsonKey(name: 'service_id')  String? serviceId)  $default,) {final _that = this;
 switch (_that) {
 case _Subscription():
-return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_that.categoryId,_that.billingCycle,_that.nextBillingDate,_that.status,_that.createdAt,_that.cardId);case _:
+return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_that.categoryId,_that.billingCycle,_that.nextBillingDate,_that.status,_that.createdAt,_that.cardId,_that.serviceId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -204,10 +205,10 @@ return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'user_id')  String userId,  String name, @JsonKey(name: 'amount')  double price,  String currency, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'billing_period')  String billingCycle, @JsonKey(name: 'next_payment_date')  DateTime nextBillingDate,  String status, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'card_id')  String? cardId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'user_id')  String userId,  String name, @JsonKey(name: 'amount')  double price,  String currency, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'billing_period')  String billingCycle, @JsonKey(name: 'next_payment_date')  DateTime nextBillingDate,  String status, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'card_id')  String? cardId, @JsonKey(name: 'service_id')  String? serviceId)?  $default,) {final _that = this;
 switch (_that) {
 case _Subscription() when $default != null:
-return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_that.categoryId,_that.billingCycle,_that.nextBillingDate,_that.status,_that.createdAt,_that.cardId);case _:
+return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_that.categoryId,_that.billingCycle,_that.nextBillingDate,_that.status,_that.createdAt,_that.cardId,_that.serviceId);case _:
   return null;
 
 }
@@ -219,7 +220,7 @@ return $default(_that.id,_that.userId,_that.name,_that.price,_that.currency,_tha
 @JsonSerializable()
 
 class _Subscription implements Subscription {
-  const _Subscription({required this.id, @JsonKey(name: 'user_id') required this.userId, required this.name, @JsonKey(name: 'amount') required this.price, required this.currency, @JsonKey(name: 'category_id') this.categoryId, @JsonKey(name: 'billing_period') required this.billingCycle, @JsonKey(name: 'next_payment_date') required this.nextBillingDate, required this.status, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'card_id') this.cardId});
+  const _Subscription({required this.id, @JsonKey(name: 'user_id') required this.userId, required this.name, @JsonKey(name: 'amount') required this.price, required this.currency, @JsonKey(name: 'category_id') this.categoryId, @JsonKey(name: 'billing_period') required this.billingCycle, @JsonKey(name: 'next_payment_date') required this.nextBillingDate, required this.status, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'card_id') this.cardId, @JsonKey(name: 'service_id') this.serviceId});
   factory _Subscription.fromJson(Map<String, dynamic> json) => _$SubscriptionFromJson(json);
 
 @override final  String id;
@@ -233,6 +234,7 @@ class _Subscription implements Subscription {
 @override final  String status;
 @override@JsonKey(name: 'created_at') final  DateTime? createdAt;
 @override@JsonKey(name: 'card_id') final  String? cardId;
+@override@JsonKey(name: 'service_id') final  String? serviceId;
 
 /// Create a copy of Subscription
 /// with the given fields replaced by the non-null parameter values.
@@ -247,16 +249,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Subscription&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.billingCycle, billingCycle) || other.billingCycle == billingCycle)&&(identical(other.nextBillingDate, nextBillingDate) || other.nextBillingDate == nextBillingDate)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.cardId, cardId) || other.cardId == cardId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Subscription&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.billingCycle, billingCycle) || other.billingCycle == billingCycle)&&(identical(other.nextBillingDate, nextBillingDate) || other.nextBillingDate == nextBillingDate)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.cardId, cardId) || other.cardId == cardId)&&(identical(other.serviceId, serviceId) || other.serviceId == serviceId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,name,price,currency,categoryId,billingCycle,nextBillingDate,status,createdAt,cardId);
+int get hashCode => Object.hash(runtimeType,id,userId,name,price,currency,categoryId,billingCycle,nextBillingDate,status,createdAt,cardId,serviceId);
 
 @override
 String toString() {
-  return 'Subscription(id: $id, userId: $userId, name: $name, price: $price, currency: $currency, categoryId: $categoryId, billingCycle: $billingCycle, nextBillingDate: $nextBillingDate, status: $status, createdAt: $createdAt, cardId: $cardId)';
+  return 'Subscription(id: $id, userId: $userId, name: $name, price: $price, currency: $currency, categoryId: $categoryId, billingCycle: $billingCycle, nextBillingDate: $nextBillingDate, status: $status, createdAt: $createdAt, cardId: $cardId, serviceId: $serviceId)';
 }
 
 
@@ -267,7 +269,7 @@ abstract mixin class _$SubscriptionCopyWith<$Res> implements $SubscriptionCopyWi
   factory _$SubscriptionCopyWith(_Subscription value, $Res Function(_Subscription) _then) = __$SubscriptionCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'user_id') String userId, String name,@JsonKey(name: 'amount') double price, String currency,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'billing_period') String billingCycle,@JsonKey(name: 'next_payment_date') DateTime nextBillingDate, String status,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'card_id') String? cardId
+ String id,@JsonKey(name: 'user_id') String userId, String name,@JsonKey(name: 'amount') double price, String currency,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'billing_period') String billingCycle,@JsonKey(name: 'next_payment_date') DateTime nextBillingDate, String status,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'card_id') String? cardId,@JsonKey(name: 'service_id') String? serviceId
 });
 
 
@@ -284,7 +286,7 @@ class __$SubscriptionCopyWithImpl<$Res>
 
 /// Create a copy of Subscription
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? name = null,Object? price = null,Object? currency = null,Object? categoryId = freezed,Object? billingCycle = null,Object? nextBillingDate = null,Object? status = null,Object? createdAt = freezed,Object? cardId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? name = null,Object? price = null,Object? currency = null,Object? categoryId = freezed,Object? billingCycle = null,Object? nextBillingDate = null,Object? status = null,Object? createdAt = freezed,Object? cardId = freezed,Object? serviceId = freezed,}) {
   return _then(_Subscription(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -297,6 +299,7 @@ as String,nextBillingDate: null == nextBillingDate ? _self.nextBillingDate : nex
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,cardId: freezed == cardId ? _self.cardId : cardId // ignore: cast_nullable_to_non_nullable
+as String?,serviceId: freezed == serviceId ? _self.serviceId : serviceId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

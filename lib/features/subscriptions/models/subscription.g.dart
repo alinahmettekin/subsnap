@@ -21,6 +21,7 @@ _Subscription _$SubscriptionFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['created_at'] as String),
       cardId: json['card_id'] as String?,
+      serviceId: json['service_id'] as String?,
     );
 
 Map<String, dynamic> _$SubscriptionToJson(_Subscription instance) =>
@@ -36,4 +37,5 @@ Map<String, dynamic> _$SubscriptionToJson(_Subscription instance) =>
       'status': instance.status,
       'created_at': instance.createdAt?.toIso8601String(),
       'card_id': instance.cardId,
+      'service_id': instance.serviceId,
     };

@@ -2,6 +2,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/subscription.dart';
 
+import '../models/service.dart';
+
 part 'subscription_provider.g.dart';
 
 class SubscriptionRepository {
@@ -25,6 +27,16 @@ class SubscriptionRepository {
   Future<List<Map<String, dynamic>>> getCategories() async {
     final response = await _client.from('categories').select().order('name', ascending: true);
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<List<Service>> getServices() async {
+    try {
+      final response = await _client.from('services').select().order('name', ascending: true);
+      return (response as List).map((json) => Service.fromJson(json)).toList();
+    } catch (e) {
+      print('DEBUG: Error fetching services (table might not exist yet): $e');
+      return [];
+    }
   }
 
   Future<void> _ensureProfileExists() async {
@@ -78,4 +90,9 @@ Future<List<Subscription>> subscriptions(Ref ref) async {
 @riverpod
 Future<List<Map<String, dynamic>>> categories(Ref ref) async {
   return ref.watch(subscriptionRepositoryProvider).getCategories();
+}
+
+@riverpod
+Future<List<Service>> services(Ref ref) async {
+  return ref.watch(subscriptionRepositoryProvider).getServices();
 }
