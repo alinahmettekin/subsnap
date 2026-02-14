@@ -2,6 +2,8 @@
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'dart:io';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../utils/constants.dart';
 
 part 'subscription_service.g.dart';
@@ -43,6 +45,27 @@ class SubscriptionService {
       await Purchases.logIn(userId);
     } catch (e) {
       print('DEBUG: RevenueCat logIn failed: $e');
+    }
+  }
+
+  static Future<void> manageSubscriptions() async {
+    try {
+      if (Platform.isIOS) {
+        final Uri url = Uri.parse('https://apps.apple.com/account/subscriptions');
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url);
+        }
+      } else if (Platform.isAndroid) {
+        final packageInfo = await PackageInfo.fromPlatform();
+        final packageName = packageInfo.packageName;
+        final Uri url = Uri.parse('https://play.google.com/store/account/subscriptions?package=$packageName');
+        // Android intent might need mode: LaunchMode.externalApplication
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        }
+      }
+    } catch (e) {
+      print('DEBUG: Failed to open subscription management: $e');
     }
   }
 

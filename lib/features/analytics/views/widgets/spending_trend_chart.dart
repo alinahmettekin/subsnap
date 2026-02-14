@@ -87,7 +87,7 @@ class SpendingTrendChart extends StatelessWidget {
                             distanceFromEdge: 2,
                           ),
                           child: Text(
-                            DateFormat('MMM').format(date),
+                            DateFormat('MMM', 'tr_TR').format(date),
                             style: TextStyle(color: onSurfaceVariant.withValues(alpha: 0.7), fontSize: 10),
                           ),
                         );

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../subscriptions/providers/subscription_provider.dart';
 import '../../cards/providers/card_provider.dart';
 import '../services/payment_service.dart';
+import '../../subscriptions/views/widgets/subscription_icon.dart';
 
 class PaymentsView extends ConsumerWidget {
   const PaymentsView({super.key});
@@ -90,16 +91,12 @@ class _PaymentsList extends ConsumerWidget {
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                            child: Text(
-                              subscription?.name.characters.first.toUpperCase() ?? '?',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                          leading: subscription != null
+                              ? SubscriptionIcon(subscription: subscription, size: 40)
+                              : CircleAvatar(
+                                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                  child: const Icon(Icons.help_outline),
+                                ),
                           title: Text(
                             subscription?.name ?? 'Bilinmeyen Abonelik',
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -109,8 +106,8 @@ class _PaymentsList extends ConsumerWidget {
                             children: [
                               Text(
                                 isHistory
-                                    ? 'Ödendi: ${DateFormat('dd MMM yyyy').format(payment.paidAt ?? payment.dueDate)}'
-                                    : 'Vade: ${DateFormat('dd MMM yyyy').format(payment.dueDate)}',
+                                    ? 'Ödendi: ${DateFormat('dd MMM yyyy', 'tr_TR').format(payment.paidAt ?? payment.dueDate)}'
+                                    : 'Vade: ${DateFormat('dd MMM yyyy', 'tr_TR').format(payment.dueDate)}',
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),

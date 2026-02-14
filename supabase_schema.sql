@@ -72,12 +72,30 @@ CREATE TRIGGER enforce_card_limit
     BEFORE INSERT ON cards
     FOR EACH ROW EXECUTE PROCEDURE check_card_limit();
 
--- 4. Create Subscriptions table
+-- 4. Create Services table (Predefined services like Netflix, Spotify)
+CREATE TABLE IF NOT EXISTS services (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon_name TEXT, -- e.g. 'spotify', 'netflix' for FontAwesome lookup
+    color TEXT, -- Hex code, e.g. '#1DB954'
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    default_price NUMERIC(10, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+
+-- Allow read access to everyone for services
+DROP POLICY IF EXISTS "Enable read access for all users" ON services;
+CREATE POLICY "Enable read access for all users" ON services FOR SELECT USING (true);
+
+-- 5. Create Subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     card_id UUID REFERENCES cards(id) ON DELETE SET NULL,
+    service_id UUID REFERENCES services(id) ON DELETE SET NULL, -- Link to predefined service
     name TEXT NOT NULL,
     amount NUMERIC(10, 2) NOT NULL,
     currency VARCHAR(3) DEFAULT 'USD',
@@ -95,7 +113,7 @@ DROP POLICY IF EXISTS "Users can manage their own subscriptions" ON subscription
 CREATE POLICY "Users can manage their own subscriptions" ON subscriptions
     FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
--- 5. Create Payments history table
+-- 6. Create Payments history table
 CREATE TABLE IF NOT EXISTS payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     subscription_id UUID REFERENCES subscriptions(id) ON DELETE CASCADE NOT NULL,
@@ -118,7 +136,7 @@ CREATE POLICY "Users can manage their own payments" ON payments
         )
     );
 
--- 6. Functions & Triggers
+-- 7. Functions & Triggers
 
 -- Trigger for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -153,7 +171,7 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE PROCEDURE handle_new_user();
 
--- 7. Insert default categories (Idempotent)
+-- 8. Insert default categories (Idempotent)
 INSERT INTO categories (name, icon, color) VALUES
 ('Entertainment', 'movie', '#FF5733'),
 ('Streaming', 'play_circle', '#E74C3C'),
@@ -162,3 +180,20 @@ INSERT INTO categories (name, icon, color) VALUES
 ('Education', 'school', '#2ECC71'),
 ('Other', 'more_horiz', '#95A5A6')
 ON CONFLICT (name) WHERE user_id IS NULL DO NOTHING;
+
+-- 9. Insert default services
+-- First, ensure name is unique to handle conflicts
+CREATE UNIQUE INDEX IF NOT EXISTS services_name_key ON services (name);
+
+INSERT INTO services (name, icon_name, color, default_price) VALUES
+('Netflix', 'film', '#E50914', 199.99),
+('Spotify', 'spotify', '#1DB954', 59.99),
+('YouTube Premium', 'youtube', '#FF0000', 57.99),
+('Amazon Prime', 'amazon', '#00A8E1', 39.00),
+('Apple Music', 'apple', '#FA243C', 19.99),
+('Disney+', 'circlePlay', '#113CCF', 134.99),
+('iCloud', 'cloud', '#007AFF', 12.99),
+('Dropbox', 'dropbox', '#0061FF', 0),
+('Exxen', 'tv', '#FFC600', 99.90),
+('BluTV', 'movie', '#0096D6', 149.90)
+ON CONFLICT (name) DO NOTHING;
