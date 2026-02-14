@@ -1,8 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/subscription_provider.dart';
 import '../models/subscription.dart';
-import 'package:intl/intl.dart';
 import '../../auth/views/settings_view.dart';
 import 'widgets/delete_subscription_dialog.dart';
 import 'paywall_view.dart';
@@ -12,205 +11,9 @@ import 'widgets/subscription_icon.dart';
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subscriptionsAsync = ref.watch(subscriptionsProvider);
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      body: subscriptionsAsync.when(
-        data: (subs) => RefreshIndicator(
-          onRefresh: () => ref.refresh(subscriptionsProvider.future),
-          child: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 0,
-                floating: true,
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                title: Text(
-                  'SubSnap',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                actions: [
-                  IconButton(
-                    onPressed: () =>
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsView())),
-                    icon: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: theme.colorScheme.primaryContainer.withAlpha(100),
-                      ),
-                      child: Icon(Icons.person_rounded, color: theme.colorScheme.primary),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              SliverToBoxAdapter(
-                child: Padding(padding: const EdgeInsets.all(20.0), child: _buildSummaryCard(context, subs)),
-              ),
-              // Premium usage indicator
-              Consumer(
-                builder: (context, ref, _) {
-                  final isPremium = ref.watch(isPremiumProvider).asData?.value ?? false;
-                  if (isPremium) return const SliverToBoxAdapter(child: SizedBox.shrink());
-
-                  final subscriptionCount = subs.length;
-                  const maxFree = 3;
-                  final progress = subscriptionCount / maxFree;
-
-                  return SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Abonelik Kullanımı',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              Text(
-                                '$subscriptionCount/$maxFree',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: progress >= 1.0 ? theme.colorScheme.error : theme.colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: progress.clamp(0.0, 1.0),
-                              minHeight: 8,
-                              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                              valueColor: AlwaysStoppedAnimation(
-                                progress >= 1.0 ? theme.colorScheme.error : theme.colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                          if (subscriptionCount >= 2)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 12.0),
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        theme.colorScheme.primaryContainer,
-                                        theme.colorScheme.secondaryContainer,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.star_rounded, color: theme.colorScheme.primary),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Premium\'a Geç',
-                                              style: theme.textTheme.titleSmall?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: theme.colorScheme.onPrimaryContainer,
-                                              ),
-                                            ),
-                                            Text(
-                                              'Sınırsız abonelik ekle',
-                                              style: theme.textTheme.bodySmall?.copyWith(
-                                                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(Icons.arrow_forward_rounded, color: theme.colorScheme.primary),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                sliver: SliverToBoxAdapter(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Abonelikler',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      TextButton(onPressed: () {}, child: const Text('Hepsini Gör')),
-                    ],
-                  ),
-                ),
-              ),
-              if (subs.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.subscriptions_outlined,
-                          size: 64,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text('Henüz abonelik eklemediniz.'),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _SubscriptionListTile(subscription: subs[index]),
-                      childCount: subs.length,
-                    ),
-                  ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 120)),
-            ],
-          ),
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Hata oluştu: $err')),
-      ),
-    );
-  }
+  Future<void> _handleDelete(BuildContext context, WidgetRef ref, Subscription subscription) async {
+    // Check if widget is mounted before showing dialog
+    if (!context.mounted) return;
 
   Widget _buildSummaryCard(BuildContext context, List<Subscription> subs) {
     final total = subs.fold(0.0, (sum, item) {
@@ -281,7 +84,7 @@ class _SubscriptionListTile extends ConsumerWidget {
 
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
     // Import the dialog
-    final DeleteOption? result = await showDialog<DeleteOption>(
+    final result = await showDialog<DeleteOption>(
       context: context,
       builder: (context) => DeleteSubscriptionDialog(subscriptionName: subscription.name),
     );
@@ -316,6 +119,7 @@ class _SubscriptionListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final subscriptionsAsync = ref.watch(subscriptionsProvider);
     final theme = Theme.of(context);
 
     return Dismissible(
@@ -347,17 +151,11 @@ class _SubscriptionListTile extends ConsumerWidget {
                     'Yenileme: ${DateFormat('dd MMM', 'tr_TR').format(subscription.nextBillingDate)}',
                     style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${subscription.price} ${subscription.currency}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: theme.colorScheme.primary,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: DashboardSummaryCard(subscriptions: subs),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -382,9 +180,87 @@ class _SubscriptionListTile extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (subs.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.add_circle_outline_rounded,
+                              size: 48,
+                              color: theme.colorScheme.primary.withOpacity(0.5),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Henüz abonelik yok',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Takip etmek için ilk aboneliğinizi ekleyin',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final subscription = subs[index];
+                          return Dismissible(
+                            key: Key(subscription.id),
+                            direction: DismissDirection.endToStart,
+                            confirmDismiss: (direction) async {
+                              await _handleDelete(context, ref, subscription);
+                              return false; // Manually handled refresh
+                            },
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.only(right: 24),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.error,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Icon(Icons.delete_rounded, color: Colors.white, size: 28),
+                            ),
+                            child: SubscriptionListItem(
+                              subscription: subscription,
+                              onTap: () {
+                                // Future: Navigate to details
+                              },
+                              onDelete: () async => await _handleDelete(context, ref, subscription),
+                            ),
+                          );
+                        },
+                        childCount: subs.length,
+                      ),
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             ),
-          ],
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Bir hata oluştu: $err')),
         ),
       ),
     );
