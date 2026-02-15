@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/subscription.dart';
@@ -11,7 +10,6 @@ class DashboardSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     final total = subscriptions.fold(0.0, (sum, item) {
       if (item.billingCycle == 'monthly') return sum + item.price;
@@ -29,15 +27,12 @@ class DashboardSummaryCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.secondary,
-          ],
+          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
         ),
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -52,10 +47,7 @@ class DashboardSummaryCard extends StatelessWidget {
             child: Container(
               width: 150,
               height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.1)),
             ),
           ),
           Positioned(
@@ -64,10 +56,7 @@ class DashboardSummaryCard extends StatelessWidget {
             child: Container(
               width: 200,
               height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.05)),
             ),
           ),
           Padding(
@@ -81,15 +70,11 @@ class DashboardSummaryCard extends StatelessWidget {
                     Text(
                       'Aylık Harcama',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         letterSpacing: 0.5,
                       ),
                     ),
-                    Icon(
-                      Icons.trending_up_rounded,
-                      color: Colors.white.withOpacity(0.8),
-                      size: 20,
-                    ),
+                    Icon(Icons.trending_up_rounded, color: Colors.white.withValues(alpha: 0.8), size: 20),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -105,26 +90,19 @@ class DashboardSummaryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1,
-                    ),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
                   ),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Icons.calendar_today_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                        child: const Icon(Icons.calendar_today_rounded, color: Colors.white, size: 16),
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -132,9 +110,7 @@ class DashboardSummaryCard extends StatelessWidget {
                         children: [
                           Text(
                             'Sıradaki Ödeme',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withOpacity(0.7),
-                            ),
+                            style: theme.textTheme.labelSmall?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
                           ),
                           Text(
                             nextBill != null

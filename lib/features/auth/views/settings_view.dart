@@ -7,6 +7,7 @@ import '../../../core/services/subscription_service.dart';
 import '../../subscriptions/views/paywall_view.dart';
 import '../../cards/views/cards_list_view.dart';
 import '../../cards/providers/card_provider.dart';
+import '../../support/views/help_and_support_view.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -19,6 +20,77 @@ class SettingsView extends ConsumerWidget {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref, String? userEmail) {
+    if (userEmail == null) return;
+
+    final emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final isMatch = emailController.text.trim() == userEmail;
+
+          return AlertDialog(
+            title: const Text('Hesabımı Sil', style: TextStyle(color: Colors.red)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm abonelikleriniz, ödemeleriniz ve verileriniz kalıcı olarak silinecektir.',
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Onaylamak için lütfen e-posta adresinizi yazınız:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    hintText: userEmail,
+                    border: const OutlineInputBorder(),
+                    errorText: emailController.text.isNotEmpty && !isMatch ? 'E-posta eşleşmiyor' : null,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+              FilledButton(
+                onPressed: isMatch
+                    ? () async {
+                        try {
+                          await ref.read(authServiceProvider).deleteAccount();
+                          if (context.mounted) {
+                            Navigator.pop(context); // Close dialog
+                            Navigator.of(context).popUntil((route) => route.isFirst); // Go to splash/login
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red));
+                            Navigator.pop(context);
+                          }
+                        }
+                      }
+                    : null,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  disabledBackgroundColor: Colors.red.withOpacity(0.3),
+                ),
+                child: const Text('Hesabımı Sil'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -65,11 +137,18 @@ class SettingsView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 _SettingsTile(
+                  icon: Icons.help_outline_rounded,
+                  title: 'Yardım ve Destek',
+                  value: 'SSS & İletişim',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportView())),
+                ),
+                const SizedBox(height: 8),
+                _SettingsTile(
                   icon: Icons.credit_card_rounded,
                   title: 'Ödeme Yöntemlerim',
                   value: ref
                       .watch(cardCountProvider)
-                      .when(data: (count) => '$count Kart', loading: () => '...', error: (_, __) => 'Hata'),
+                      .when(data: (count) => '$count Kart', loading: () => '...', error: (_, _) => 'Hata'),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardsListView())),
                 ),
                 const SizedBox(height: 8),
@@ -86,15 +165,13 @@ class SettingsView extends ConsumerWidget {
             ),
             loading: () =>
                 const _SettingsTile(icon: Icons.workspace_premium_rounded, title: 'Abonelik Durumu', value: '...'),
-            error: (_, __) => const _SettingsTile(
+            error: (_, _) => const _SettingsTile(
               icon: Icons.workspace_premium_rounded,
               title: 'Abonelik Durumu',
               value: 'Bilinmiyor',
             ),
           ),
           const Divider(height: 32),
-          _SettingsTile(icon: Icons.help_outline_rounded, title: 'Yardım & Destek', onTap: () {}),
-          _SettingsTile(icon: Icons.info_outline_rounded, title: 'Uygulama Hakkında', onTap: () {}),
           const SizedBox(height: 32),
           OutlinedButton.icon(
             onPressed: () async {
@@ -110,6 +187,16 @@ class SettingsView extends ConsumerWidget {
               side: const BorderSide(color: Colors.red),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: () => _showDeleteAccountDialog(context, ref, user?.email),
+            icon: const Icon(Icons.delete_forever_rounded, size: 20),
+            label: const Text('Hesabımı Sil'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red.withOpacity(0.8),
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
         ],

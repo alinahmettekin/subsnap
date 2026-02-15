@@ -21,7 +21,8 @@ class _NavigationContainerState extends ConsumerState<NavigationContainer> {
   final List<Widget> _screens = [
     const DashboardView(),
     const PaymentsView(),
-    const AnalyticsView(), // Replaced placeholder
+    const AnalyticsView(),
+    const SettingsView(),
   ];
 
   @override
@@ -44,9 +45,6 @@ class _NavigationContainerState extends ConsumerState<NavigationContainer> {
                 builder: (context) => const AddSubscriptionView(),
               );
             },
-            onProfile: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsView()));
-            },
           ),
         ),
       ),
@@ -58,14 +56,8 @@ class _SoftBottomBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelect;
   final VoidCallback onAddSubscription;
-  final VoidCallback onProfile;
 
-  const _SoftBottomBar({
-    required this.currentIndex,
-    required this.onSelect,
-    required this.onAddSubscription,
-    required this.onProfile,
-  });
+  const _SoftBottomBar({required this.currentIndex, required this.onSelect, required this.onAddSubscription});
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +102,7 @@ class _SoftBottomBar extends StatelessWidget {
                     isAddButton: true,
                   ),
                   _NavBarItem(icon: Icons.bar_chart_rounded, isSelected: currentIndex == 2, onTap: () => onSelect(2)),
-                  _NavBarItem(icon: Icons.person_rounded, isSelected: false, onTap: onProfile),
+                  _NavBarItem(icon: Icons.person_rounded, isSelected: currentIndex == 3, onTap: () => onSelect(3)),
                 ],
               ),
             ),

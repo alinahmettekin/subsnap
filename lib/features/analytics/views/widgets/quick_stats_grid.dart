@@ -34,23 +34,44 @@ class QuickStatsGrid extends StatelessWidget {
       }
     }
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+    return Column(
       children: [
-        _StatCard(title: 'Aktif Plan', value: '$activeCount Abonelik', icon: Icons.playlist_play_rounded),
-        _StatCard(title: 'Yaklaşan (7 Gün)', value: '$upcomingCount Ödeme', icon: Icons.event_note_rounded),
-        _StatCard(
-          title: 'En Pahalı',
-          value: mostExpensive?.name ?? '-',
-          icon: Icons.monetization_on_outlined,
-          valueFontSize: 14,
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(title: 'Aktif Plan', value: '$activeCount Abonelik', icon: Icons.playlist_play_rounded),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                title: 'Yaklaşan (7 Gün)',
+                value: '$upcomingCount Ödeme',
+                icon: Icons.event_note_rounded,
+              ),
+            ),
+          ],
         ),
-        _StatCard(title: 'Bu Yıl', value: '₺${yearlyTotal.toStringAsFixed(0)}', icon: Icons.calendar_today_rounded),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                title: 'En Pahalı',
+                value: mostExpensive?.name ?? '-',
+                icon: Icons.monetization_on_outlined,
+                valueFontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                title: 'Bu Yıl',
+                value: '₺${yearlyTotal.toStringAsFixed(0)}',
+                icon: Icons.calendar_today_rounded,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -71,6 +92,7 @@ class _StatCard extends StatelessWidget {
     final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
 
     return Container(
+      height: 110, // Fixed height for consistency
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,

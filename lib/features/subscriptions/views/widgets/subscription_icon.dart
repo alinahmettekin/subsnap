@@ -53,7 +53,7 @@ class SubscriptionIcon extends ConsumerWidget {
         return _buildInitials(theme);
       },
       loading: () => _buildInitials(theme),
-      error: (_, __) => _buildInitials(theme),
+      error: (_, _) => _buildInitials(theme),
     );
   }
 

@@ -1,7 +1,10 @@
-﻿import 'package:riverpod_annotation/riverpod_annotation.dart';
+﻿import 'dart:developer';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/subscription.dart';
-
 import '../models/service.dart';
 
 part 'subscription_provider.g.dart';
@@ -15,18 +18,67 @@ class SubscriptionRepository {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
 
-    final response = await _client
-        .from('subscriptions')
-        .select()
-        .eq('user_id', userId)
-        .order('next_payment_date', ascending: true);
+    try {
+      final response = await _client
+          .from('subscriptions')
+          .select()
+          .eq('user_id', userId)
+          .inFilter('status', ['active', 'trial'])
+          .order('next_payment_date', ascending: true);
 
-    return (response as List).map((json) => Subscription.fromJson(json)).toList();
+      final data = (response as List).map((json) => Subscription.fromJson(json)).toList();
+      log('DEBUG: Fetched ${data.length} active subscriptions');
+      return data;
+    } catch (e) {
+      log('DEBUG: Error fetching subscriptions: $e');
+      return [];
+    }
+  }
+
+  Future<List<Subscription>> getArchivedSubscriptions() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    try {
+      final response = await _client
+          .from('subscriptions')
+          .select()
+          .eq('user_id', userId)
+          .eq('status', 'cancelled')
+          .order('updated_at', ascending: false);
+
+      final data = (response as List).map((json) => Subscription.fromJson(json)).toList();
+      log('DEBUG: Fetched ${data.length} archived subscriptions');
+      return data;
+    } catch (e) {
+      log('DEBUG: Error fetching archived subscriptions: $e');
+      return [];
+    }
+  }
+
+  Future<List<Subscription>> getAllSubscriptions() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    try {
+      final response = await _client.from('subscriptions').select().eq('user_id', userId);
+
+      final data = (response as List).map((json) => Subscription.fromJson(json)).toList();
+      return data;
+    } catch (e) {
+      log('DEBUG: Error fetching all subscriptions: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getCategories() async {
-    final response = await _client.from('categories').select().order('name', ascending: true);
-    return List<Map<String, dynamic>>.from(response);
+    try {
+      final response = await _client.from('categories').select().order('name', ascending: true);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      log('DEBUG: Error fetching categories: $e');
+      return [];
+    }
   }
 
   Future<List<Service>> getServices() async {
@@ -34,65 +86,103 @@ class SubscriptionRepository {
       final response = await _client.from('services').select().order('name', ascending: true);
       return (response as List).map((json) => Service.fromJson(json)).toList();
     } catch (e) {
-      print('DEBUG: Error fetching services (table might not exist yet): $e');
+      log('DEBUG: Error fetching services: $e');
       return [];
     }
   }
 
-  Future<void> _ensureProfileExists() async {
-    final user = _client.auth.currentUser;
-    if (user == null) return;
-
+  Future<void> addSubscription(Subscription subscription) async {
+    log('DEBUG: Adding subscription: ${subscription.toJson()}');
     try {
-      final response = await _client.from('profiles').select().eq('id', user.id).maybeSingle();
-      if (response == null) {
-        await _client.from('profiles').insert({
-          'id': user.id,
-          'full_name': user.userMetadata?['full_name'] ?? 'User',
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-      }
+      await _client.from('subscriptions').insert(subscription.toJson());
+      log('DEBUG: Subscription added successfully');
     } catch (e) {
-      // Silently ignore or log - preventing profile creation shouldn't always block
-      print('DEBUG: Profile check/creation failed: $e');
+      log('DEBUG: Error adding subscription: $e');
+      rethrow;
     }
   }
 
-  Future<void> addSubscription(Subscription subscription) async {
-    await _ensureProfileExists();
-    await _client.from('subscriptions').insert(subscription.toJson());
-  }
-
   Future<void> deleteSubscription(String id) async {
-    await _client.from('subscriptions').delete().eq('id', id);
-  }
-
-  Future<void> updateSubscriptionDate(String id, DateTime newDate) async {
-    await _client.from('subscriptions').update({'next_payment_date': newDate.toIso8601String()}).eq('id', id);
+    try {
+      await _client.from('subscriptions').update({'status': 'cancelled'}).eq('id', id);
+    } catch (e) {
+      log('DEBUG: Error deleting subscription: $e');
+      rethrow;
+    }
   }
 
   Future<void> deleteSubscriptionWithPayments(String id) async {
-    // Database 'ON DELETE CASCADE' will automatically delete associated payments.
-    await _client.from('subscriptions').delete().eq('id', id);
+    try {
+      await _client.from('subscriptions').delete().eq('id', id);
+    } catch (e) {
+      log('DEBUG: Error deleting subscription with payments: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateSubscription(Subscription subscription) async {
+    log('DEBUG: Updating subscription: ${subscription.toJson()}');
+    try {
+      await _client.from('subscriptions').update(subscription.toJson()).eq('id', subscription.id);
+      log('DEBUG: Subscription updated successfully');
+    } catch (e) {
+      log('DEBUG: Error updating subscription: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateSubscriptionDate(String id, DateTime newDate) async {
+    try {
+      await _client
+          .from('subscriptions')
+          .update({'next_payment_date': newDate.toIso8601String(), 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', id);
+    } catch (e) {
+      log('Error updating subscription date: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> restoreSubscription(String id) async {
+    try {
+      await _client.from('subscriptions').update({'status': 'active'}).eq('id', id);
+    } catch (e) {
+      log('DEBUG: Error restoring subscription: $e');
+      rethrow;
+    }
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 SubscriptionRepository subscriptionRepository(Ref ref) {
   return SubscriptionRepository(Supabase.instance.client);
 }
 
 @riverpod
 Future<List<Subscription>> subscriptions(Ref ref) async {
+  final link = ref.keepAlive();
+  final timer = Timer(const Duration(seconds: 5), () {
+    link.close();
+  });
+  ref.onDispose(() => timer.cancel());
+
   return ref.watch(subscriptionRepositoryProvider).getSubscriptions();
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<Map<String, dynamic>>> categories(Ref ref) async {
   return ref.watch(subscriptionRepositoryProvider).getCategories();
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<Service>> services(Ref ref) async {
   return ref.watch(subscriptionRepositoryProvider).getServices();
 }
+
+final archivedSubscriptionsProvider = FutureProvider<List<Subscription>>((ref) async {
+  return ref.watch(subscriptionRepositoryProvider).getArchivedSubscriptions();
+});
+
+final allSubscriptionsProvider = FutureProvider<List<Subscription>>((ref) async {
+  return ref.watch(subscriptionRepositoryProvider).getAllSubscriptions();
+});

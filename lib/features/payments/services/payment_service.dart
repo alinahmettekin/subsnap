@@ -1,4 +1,5 @@
-﻿import 'dart:developer';
+﻿import 'dart:async';
+import 'dart:developer';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/payment.dart';
@@ -55,9 +56,13 @@ class PaymentService {
     // So we'll create a map and remove ID if it starts with 'temp_'.
 
     final data = payment.toJson();
-    if (payment.id.startsWith('temp_')) {
+    if (payment.id.startsWith('temp_') || payment.id.startsWith('new_')) {
       data.remove('id');
     }
+    // Remove category_id if it exists in the json (defensive programming for outdated g.dart)
+    data.remove('category_id');
+    // Remove name if it exists (defensive programming for outdated g.dart)
+    data.remove('name');
 
     // Set paid_at to now if not set
     if (payment.paidAt == null) {
@@ -87,7 +92,7 @@ class PaymentService {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 PaymentService paymentService(Ref ref) {
   return PaymentService(Supabase.instance.client);
 }
@@ -120,5 +125,11 @@ Future<List<Payment>> upcomingPayments(Ref ref) async {
 
 @riverpod
 Future<List<Payment>> paymentHistory(Ref ref) async {
+  final link = ref.keepAlive();
+  final timer = Timer(const Duration(seconds: 5), () {
+    link.close();
+  });
+  ref.onDispose(() => timer.cancel());
+
   return ref.watch(paymentServiceProvider).getPayments(history: true);
 }

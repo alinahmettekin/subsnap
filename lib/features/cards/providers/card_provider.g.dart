@@ -21,7 +21,7 @@ final class CardServiceProvider
         argument: null,
         retry: null,
         name: r'cardServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -48,7 +48,7 @@ final class CardServiceProvider
   }
 }
 
-String _$cardServiceHash() => r'f31da9b4f595573d84ba354d642ee90c1a7bff78';
+String _$cardServiceHash() => r'8dad6e13f029398bbf3c32b34fa86f4500540a3c';
 
 @ProviderFor(cards)
 final cardsProvider = CardsProvider._();
@@ -69,7 +69,7 @@ final class CardsProvider
         argument: null,
         retry: null,
         name: r'cardsProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -89,7 +89,7 @@ final class CardsProvider
   }
 }
 
-String _$cardsHash() => r'1e8710407629b5f47badfd3b62242ca00a31e160';
+String _$cardsHash() => r'e658e9c28c2d79f42ee6694b191877573e2c40d9';
 
 @ProviderFor(cardCount)
 final cardCountProvider = CardCountProvider._();
@@ -103,7 +103,7 @@ final class CardCountProvider
         argument: null,
         retry: null,
         name: r'cardCountProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -122,7 +122,7 @@ final class CardCountProvider
   }
 }
 
-String _$cardCountHash() => r'336562d7f7a032e0a9d88dc40320dd495d88cc72';
+String _$cardCountHash() => r'6b649e367c0d57ca39932557aa964ec1f76b36f3';
 
 @ProviderFor(canAddCard)
 final canAddCardProvider = CanAddCardProvider._();
@@ -136,7 +136,7 @@ final class CanAddCardProvider
         argument: null,
         retry: null,
         name: r'canAddCardProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -155,4 +155,4 @@ final class CanAddCardProvider
   }
 }
 
-String _$canAddCardHash() => r'a180c573309d9ca518907dea66a652cbb814a32b';
+String _$canAddCardHash() => r'41d3f8b33c68bc9b1b5c5e48571ed557d3769d08';

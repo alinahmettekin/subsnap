@@ -5,10 +5,14 @@ import '../../subscriptions/providers/subscription_provider.dart';
 import '../../payments/services/payment_service.dart';
 import '../../../core/services/subscription_service.dart';
 import '../../subscriptions/views/paywall_view.dart';
-import 'widgets/header_overview.dart';
+
 import 'widgets/quick_stats_grid.dart';
 import 'widgets/category_donut_chart.dart';
-import 'widgets/upcoming_payments_list.dart';
+import 'widgets/monthly_comparison_card.dart';
+import 'widgets/payment_method_breakdown.dart';
+import 'widgets/spending_history_chart.dart';
+
+// ... (inside build)
 
 class AnalyticsView extends ConsumerWidget {
   const AnalyticsView({super.key});
@@ -21,6 +25,7 @@ class AnalyticsView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(title: const Text('Harcama Analizi'), scrolledUnderElevation: 0),
       body: subscriptionsAsync.when(
         data: (subscriptions) {
           if (subscriptions.isEmpty) {
@@ -37,65 +42,67 @@ class AnalyticsView extends ConsumerWidget {
             data: (upcoming) {
               return Consumer(
                 builder: (context, ref, _) {
-                  final isPremium = ref.watch(isPremiumProvider).asData?.value ?? false;
+                  final isPremiumAsync = ref.watch(isPremiumProvider);
 
-                  // Show paywall on first visit (only once)
-                  WidgetsBinding.instance.addPostFrameCallback((_) async {
-                    final prefs = await SharedPreferences.getInstance();
-                    final hasSeenPaywall = prefs.getBool('analytics_paywall_seen') ?? false;
-
-                    if (!isPremium && !hasSeenPaywall && context.mounted) {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        isDismissible: true,
-                        builder: (context) => const PaywallView(),
-                      ).then((_) {
-                        // Mark as seen when dismissed
-                        prefs.setBool('analytics_paywall_seen', true);
-                      });
-                    }
-                  });
-
-                  return SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        // 1. Header Overview - FREE
-                        HeaderOverview(subscriptions: subscriptions),
-
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 12),
-                              // 2. Quick Stats Grid - FREE
-                              QuickStatsGrid(subscriptions: subscriptions, upcomingPayments: upcoming),
-                              const SizedBox(height: 16),
-
-                              // 3. Category Breakdown - Show real or placeholder
-                              if (isPremium)
-                                CategoryDonutChart(subscriptions: subscriptions)
-                              else
-                                _PremiumPlaceholder(title: 'Kategori Analizi', icon: Icons.pie_chart_rounded),
-                              const SizedBox(height: 32),
-
-                              // 6. Upcoming Payments - FREE (limited to 3 for non-premium)
-                              UpcomingPaymentsList(
-                                subscriptions: subscriptions,
-                                upcomingPayments: isPremium ? upcoming : upcoming.take(3).toList(),
-                                showLimitMessage: !isPremium && upcoming.length > 3,
-                              ),
-
-                              // Premium Banner at bottom (only for non-premium)
-                              if (!isPremium) ...[const SizedBox(height: 32), _PremiumBanner()],
-
-                              const SizedBox(height: 100), // Bottom padding for FAB
-                            ],
-                          ),
-                        ),
-                      ],
+                  return isPremiumAsync.when(
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (_, _) => Center(
+                      child: Text('Hata oluştu', style: TextStyle(color: theme.colorScheme.error)),
                     ),
+                    data: (isPremium) {
+                      // Paywall logic
+                      WidgetsBinding.instance.addPostFrameCallback((_) async {
+                        final prefs = await SharedPreferences.getInstance();
+                        final hasSeenPaywall = prefs.getBool('analytics_paywall_seen') ?? false;
+
+                        if (!isPremium && !hasSeenPaywall && context.mounted) {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            isDismissible: true,
+                            builder: (context) => const PaywallView(),
+                          ).then((_) {
+                            prefs.setBool('analytics_paywall_seen', true);
+                          });
+                        }
+                      });
+
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 16),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                children: [
+                                  QuickStatsGrid(subscriptions: subscriptions, upcomingPayments: upcoming),
+                                  const SizedBox(height: 12),
+
+                                  if (isPremium) ...[
+                                    // 2. Spending History Chart
+                                    const SpendingHistoryChart(),
+                                    const SizedBox(height: 12),
+
+                                    // 3. Monthly Comparison
+                                    const MonthlyComparisonCard(),
+                                    const SizedBox(height: 12),
+
+                                    // 3. Advanced Analysis
+                                    CategoryDonutChart(subscriptions: subscriptions),
+                                    const SizedBox(height: 16),
+                                    PaymentMethodBreakdown(subscriptions: subscriptions),
+                                  ] else ...[
+                                    _PremiumBanner(),
+                                  ],
+                                  const SizedBox(height: 32), // Bottom padding
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   );
                 },
               );
@@ -109,43 +116,6 @@ class AnalyticsView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: Text('Hata: $err', style: TextStyle(color: theme.colorScheme.error)),
-        ),
-      ),
-    );
-  }
-}
-
-// Simple Premium Placeholder Widget
-class _PremiumPlaceholder extends StatelessWidget {
-  final String title;
-  final IconData icon;
-
-  const _PremiumPlaceholder({required this.title, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
         ),
       ),
     );

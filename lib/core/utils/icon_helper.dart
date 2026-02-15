@@ -60,6 +60,27 @@ class IconHelper {
       case 'shopping':
         return Icons.shopping_bag_rounded;
 
+      // Tech / Dev / Design
+      case 'code':
+      case 'github':
+        return FontAwesomeIcons.github;
+      case 'triangle':
+      case 'vercel':
+        return FontAwesomeIcons.caretUp;
+      case 'image':
+      case 'freepik':
+        return FontAwesomeIcons.image;
+      case 'sparkles':
+      case 'subsnap':
+        return Icons.auto_awesome_rounded;
+
+      // Telecom / ISP
+      case 'phone':
+        return Icons.phone_iphone_rounded;
+      case 'wifi':
+      case 'network':
+        return Icons.wifi_rounded;
+
       default:
         return Icons.category_rounded;
     }

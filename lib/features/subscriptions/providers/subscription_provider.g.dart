@@ -26,7 +26,7 @@ final class SubscriptionRepositoryProvider
         argument: null,
         retry: null,
         name: r'subscriptionRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,7 +55,7 @@ final class SubscriptionRepositoryProvider
 }
 
 String _$subscriptionRepositoryHash() =>
-    r'02567df9441240e0ca9798e87c46e905e69769f9';
+    r'd9e08b15d04f1a44901872df0211a221d6e8bc34';
 
 @ProviderFor(subscriptions)
 final subscriptionsProvider = SubscriptionsProvider._();
@@ -96,7 +96,7 @@ final class SubscriptionsProvider
   }
 }
 
-String _$subscriptionsHash() => r'bdfa0a40627307299cd154c844bbc1eea75e011f';
+String _$subscriptionsHash() => r'2062eb1fc739a21b1a62891f78c3bf27af6d7539';
 
 @ProviderFor(categories)
 final categoriesProvider = CategoriesProvider._();
@@ -117,7 +117,7 @@ final class CategoriesProvider
         argument: null,
         retry: null,
         name: r'categoriesProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -137,7 +137,7 @@ final class CategoriesProvider
   }
 }
 
-String _$categoriesHash() => r'52797f6fe8604f6cd89142f9cae9c5275e2e2821';
+String _$categoriesHash() => r'41bd56198dbcde66410a238752112b36fe066cf0';
 
 @ProviderFor(services)
 final servicesProvider = ServicesProvider._();
@@ -156,7 +156,7 @@ final class ServicesProvider
         argument: null,
         retry: null,
         name: r'servicesProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -176,4 +176,4 @@ final class ServicesProvider
   }
 }
 
-String _$servicesHash() => r'2434070498db4e935ca3820dac9140b6cee1f2f4';
+String _$servicesHash() => r'e91ca34f5977d06e94e572b7b3699ba2cf4722a0';

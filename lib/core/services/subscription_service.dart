@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'dart:developer';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'dart:io';
@@ -20,14 +21,14 @@ class SubscriptionService {
   }
 
   static bool checkPremium(CustomerInfo customerInfo) {
-    print('DEBUG: Checking premium status...');
-    print('DEBUG: Active entitlements: ${customerInfo.entitlements.active.keys}');
-    print('DEBUG: All entitlements: ${customerInfo.entitlements.all.keys}');
+    log('DEBUG: Checking premium status...');
+    log('DEBUG: Active entitlements: ${customerInfo.entitlements.active.keys}');
+    log('DEBUG: All entitlements: ${customerInfo.entitlements.all.keys}');
 
     // Check for specific entitlement identifier provided by RevenueCat logs
     final isPremium = customerInfo.entitlements.active.containsKey(AppConstants.entitlementId);
 
-    print('DEBUG: Premium status: $isPremium');
+    log('DEBUG: Premium status: $isPremium');
     return isPremium;
   }
 
@@ -44,7 +45,7 @@ class SubscriptionService {
     try {
       await Purchases.logIn(userId);
     } catch (e) {
-      print('DEBUG: RevenueCat logIn failed: $e');
+      log('DEBUG: RevenueCat logIn failed: $e');
     }
   }
 
@@ -65,7 +66,7 @@ class SubscriptionService {
         }
       }
     } catch (e) {
-      print('DEBUG: Failed to open subscription management: $e');
+      log('DEBUG: Failed to open subscription management: $e');
     }
   }
 
@@ -75,10 +76,10 @@ class SubscriptionService {
       if (!isAnonymous) {
         await Purchases.logOut();
       } else {
-        print('DEBUG: RevenueCat user is already anonymous, skipping logOut');
+        log('DEBUG: RevenueCat user is already anonymous, skipping logOut');
       }
     } catch (e) {
-      print('DEBUG: RevenueCat logOut failed: $e');
+      log('DEBUG: RevenueCat logOut failed: $e');
     }
   }
 }

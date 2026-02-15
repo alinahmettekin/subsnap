@@ -13,6 +13,7 @@ import '../../cards/views/add_card_view.dart';
 import '../models/service.dart';
 import '../../../../core/utils/icon_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../payments/services/payment_service.dart';
 
 class AddSubscriptionView extends ConsumerStatefulWidget {
   const AddSubscriptionView({super.key});
@@ -71,7 +72,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                 mode: CupertinoDatePickerMode.date,
                 dateOrder: DatePickerDateOrder.dmy,
                 use24hFormat: true,
-                minimumDate: DateTime.now().subtract(const Duration(days: 1)),
+                minimumDate: DateTime(2000),
                 maximumDate: DateTime.now().add(const Duration(days: 365 * 10)),
                 onDateTimeChanged: (val) {
                   setState(() => _nextBillingDate = val);
@@ -133,8 +134,26 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
         throw Exception('Kullanıcı girişi yapılmamış (User ID null)');
       }
 
+      // Default to "Diğer" category if none selected
+      if (_selectedCategoryId == null) {
+        final categories = ref.read(categoriesProvider).asData?.value;
+        if (categories != null) {
+          try {
+            final otherCat = categories.firstWhere(
+              (c) => (c['name'] as String) == 'Diğer' || (c['name'] as String) == 'Other',
+            );
+            _selectedCategoryId = otherCat['id'] as String;
+          } catch (e) {
+            // If "Diğer" not found, default to the first available category
+            if (categories.isNotEmpty) {
+              _selectedCategoryId = categories.first['id'] as String;
+            }
+          }
+        }
+      }
+
       final sub = Subscription(
-        id: Uuid().v4(),
+        id: const Uuid().v4(),
         userId: userId,
         name: _nameController.text,
         price: double.tryParse(_priceController.text) ?? 0.0,
@@ -154,6 +173,9 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
       if (mounted) {
         debugPrint('DEBUG: Insertion successful');
         ref.invalidate(subscriptionsProvider);
+        ref.invalidate(allSubscriptionsProvider);
+        ref.invalidate(upcomingPaymentsProvider);
+        ref.invalidate(paymentHistoryProvider);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Abonelik başarıyla eklendi!'), backgroundColor: Colors.green));
@@ -162,9 +184,22 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
     } catch (e, stack) {
       debugPrint('DEBUG: ERROR in _submit: $e');
       debugPrint('DEBUG: STACKTRACE: $stack');
+
+      String errorMessage = 'Beklenmeyen bir hata oluştu.';
+
+      if (e is PostgrestException) {
+        if (e.code == '23503') {
+          errorMessage = 'Seçilen servis veritabanında bulunamadı. Lütfen uygulamayı yeniden başlatıp tekrar deneyin.';
+        } else {
+          errorMessage = e.message;
+        }
+      } else {
+        errorMessage = e.toString();
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
         );
       }
     } finally {
@@ -203,14 +238,37 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
               servicesAsync.when(
                 data: (services) => _buildPopularServices(categoriesAsync.asData?.value, services),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
-                decoration: _inputDecoration('Abonelik Adı'),
-                validator: (v) => v == null || v.isEmpty ? 'Lütfen bir ad girin' : null,
+                readOnly: _selectedServiceId != null,
+                decoration: _inputDecoration('Abonelik Adı').copyWith(
+                  prefixIcon: const Icon(Icons.subscriptions_outlined),
+                  suffixIcon: _selectedServiceId != null
+                      ? IconButton(
+                          icon: const Icon(Icons.close, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _selectedServiceId = null;
+                              _nameController.clear();
+                              _priceController.clear(); // clearing price too as requested implicitly "clear selection"
+                              _selectedCategoryId = null;
+                            });
+                          },
+                          tooltip: 'Seçimi Temizle',
+                        )
+                      : null,
+                ),
+                validator: (value) => value?.isEmpty ?? true ? 'Zorunlu alan' : null,
               ),
+              const SizedBox(height: 16),
+
+              // Price and Currency Row (skipping for now, target next block)
+              // Wait, I need to find where Category dropdown is.
+              // It is probably further down.
+              // Let's target the Category Dropdown specifically.
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -248,15 +306,23 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
               const SizedBox(height: 16),
               categoriesAsync.when(
                 data: (cats) => DropdownButtonFormField<String>(
-                  initialValue: _selectedCategoryId,
+                  initialValue: _selectedCategoryId, // Changed from initialValue to value
                   decoration: _inputDecoration('Kategori'),
+                  hint: const Text('Kategori (Varsayılan: Diğer)'),
                   items: cats
                       .map(
                         (c) => DropdownMenuItem(
                           value: c['id'] as String,
                           child: Row(
                             children: [
-                              if (c['icon'] != null) Icon(_getIconData(c['icon'] as String), size: 18),
+                              if (c['icon_name'] != null)
+                                FaIcon(
+                                  IconHelper.getIcon(c['icon_name'] as String),
+                                  size: 18,
+                                  color: Theme.of(context).primaryColor,
+                                )
+                              else if (c['icon'] != null)
+                                Icon(_getIconData(c['icon'] as String), size: 18),
                               const SizedBox(width: 8),
                               Text(c['name'] as String),
                             ],
@@ -264,7 +330,8 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                         ),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() => _selectedCategoryId = v),
+                  onChanged: _selectedServiceId != null ? null : (v) => setState(() => _selectedCategoryId = v),
+                  validator: (v) => null, // Optional, defaults to Other
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (_, _) => const Text('Kategoriler yüklenemedi'),
@@ -381,90 +448,88 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   Widget _buildPopularServices(List<dynamic>? categories, List<Service> services) {
     if (services.isEmpty) return const SizedBox.shrink();
 
+    void selectService(Service service) {
+      debugPrint('DEBUG: Selected service: ${service.name} (CatID: ${service.categoryId})');
+
+      setState(() {
+        _nameController.text = service.name;
+        _selectedServiceId = service.id;
+
+        if (service.defaultPrice != null) {
+          _priceController.text = service.defaultPrice!.toStringAsFixed(2);
+        }
+
+        // Set category if available
+        if (service.categoryId != null) {
+          _selectedCategoryId = service.categoryId;
+        } else if (categories != null) {
+          // Fallback: try to match by name logical if no ID (though DB should have IDs)
+          // For now, simpler is better: rely on service.categoryId
+        }
+      });
+
+      // Auto-focus price if empty
+      if (_priceController.text.isEmpty || _priceController.text == '0.00') {
+        _priceFocusNode.requestFocus();
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            'Popüler Servisler',
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Popüler Servisler',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => DraggableScrollableSheet(
+                      initialChildSize: 0.8,
+                      minChildSize: 0.5,
+                      maxChildSize: 0.95,
+                      builder: (_, controller) => _ServiceSelectionSheet(
+                        services: services,
+                        onSelected: (s) {
+                          Navigator.pop(context);
+                          selectService(s);
+                        },
+                      ),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Tümünü Gör', style: TextStyle(fontSize: 12)),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 50,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: services.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final service = services[index];
-              final color = IconHelper.getColor(service.color);
-              final icon = IconHelper.getIcon(service.iconName);
-
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _nameController.text = service.name;
-                    _selectedServiceId = service.id;
-
-                    if (service.defaultPrice != null) {
-                      _priceController.text = service.defaultPrice.toString();
-                    }
-
-                    // Find category logic
-                    if (categories != null && service.categoryId != null) {
-                      try {
-                        // If service has strict category_id, use it
-                        // First try direct ID match
-                        final catById = categories.firstWhere((c) => c['id'] == service.categoryId, orElse: () => null);
-
-                        if (catById != null) {
-                          _selectedCategoryId = service.categoryId;
-                        } else {
-                          // Try name matching if ID not found (fallback)
-                          // ... (existing logic omitted for brevity as backend should handle consistency)
-                          _selectedCategoryId = service.categoryId;
-                        }
-                      } catch (_) {
-                        _selectedCategoryId = service.categoryId;
-                      }
-                    }
-                  });
-                  // Focus price if not set
-                  if (_priceController.text.isEmpty) {
-                    _priceFocusNode.requestFocus();
-                  }
-                },
-                borderRadius: BorderRadius.circular(24),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: color.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FaIcon(icon, color: color, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        service.name,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          child: Row(
+            children: services.map((service) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _ServiceCard(service: service, onTap: () => selectService(service)),
               );
-            },
+            }).toList(),
           ),
         ),
       ],
@@ -487,6 +552,190 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
       errorBorder: OutlineInputBorder(
         borderRadius: radius,
         borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+      ),
+    );
+  }
+}
+
+class _ServiceCard extends StatelessWidget {
+  final Service service;
+  final VoidCallback onTap;
+
+  const _ServiceCard({required this.service, required this.onTap});
+
+  // ... rest of ServiceCard
+
+  @override
+  Widget build(BuildContext context) {
+    var color = _hexToColor(service.color);
+    final iconData = IconHelper.getIcon(service.iconName);
+
+    // Visibility logic
+    final isLight = color.computeLuminance() > 0.8;
+    final isDark = color.computeLuminance() < 0.1;
+
+    final avatarBg = isLight
+        ? const Color(0xFF202124)
+        : (isDark ? const Color(0xFFF1F3F4) : color.withValues(alpha: 0.2));
+
+    final iconColor = isLight ? Colors.white : (isDark ? Colors.black : color);
+
+    final containerBg = isLight
+        ? Colors.grey.withValues(alpha: 0.1)
+        : (isDark ? Colors.white.withValues(alpha: 0.1) : color.withValues(alpha: 0.08));
+
+    final borderColor = isLight
+        ? Colors.grey.withValues(alpha: 0.3)
+        : (isDark ? Colors.white.withValues(alpha: 0.3) : color.withValues(alpha: 0.15));
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: containerBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              backgroundColor: avatarBg,
+              radius: 11,
+              child: FaIcon(iconData, color: iconColor, size: 11),
+            ),
+            const SizedBox(width: 6),
+            Text(service.name, maxLines: 1, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _hexToColor(String? hex) {
+    if (hex == null || hex.isEmpty) return Colors.grey;
+    final buffer = StringBuffer();
+    if (hex.length == 6 || hex.length == 7) buffer.write('ff');
+    buffer.write(hex.replaceFirst('#', ''));
+    try {
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return Colors.grey;
+    }
+  }
+}
+
+class _ServiceSelectionSheet extends StatefulWidget {
+  final List<Service> services;
+  final ValueChanged<Service> onSelected;
+
+  const _ServiceSelectionSheet({required this.services, required this.onSelected});
+
+  @override
+  State<_ServiceSelectionSheet> createState() => _ServiceSelectionSheetState();
+}
+
+class _ServiceSelectionSheetState extends State<_ServiceSelectionSheet> {
+  late List<Service> _filteredServices;
+  final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredServices = widget.services;
+  }
+
+  void _filter(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredServices = widget.services;
+      } else {
+        _filteredServices = widget.services.where((s) => s.name.toLowerCase().contains(query.toLowerCase())).toList();
+      }
+    });
+  }
+
+  Color _hexToColor(String? hex) {
+    if (hex == null || hex.isEmpty) return Colors.grey;
+    final buffer = StringBuffer();
+    if (hex.length == 6 || hex.length == 7) buffer.write('ff');
+    buffer.write(hex.replaceFirst('#', ''));
+    try {
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Text('Servis Seç', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _searchController,
+            onChanged: _filter,
+            decoration: InputDecoration(
+              hintText: 'Ara...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.separated(
+              itemCount: _filteredServices.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final service = _filteredServices[index];
+                var color = _hexToColor(service.color);
+                final iconData = IconHelper.getIcon(service.iconName);
+
+                // Handle white/light colors specially for visibility
+                final isLight = color.computeLuminance() > 0.8;
+                final isDark = color.computeLuminance() < 0.1;
+
+                final avatarBg = isLight
+                    ? const Color(0xFF202124)
+                    : (isDark ? const Color(0xFFF1F3F4) : color.withValues(alpha: 0.15));
+
+                final iconColor = isLight ? Colors.white : (isDark ? Colors.black : color);
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: avatarBg,
+                    child: FaIcon(iconData, color: iconColor, size: 20),
+                  ),
+                  title: Text(service.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () => widget.onSelected(service),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -34,46 +34,53 @@ on public.payments for update
 using (auth.uid() = user_id);
 
 -- 3. Function to generate recurring payments
+-- 3. Function to generate recurring payments (Updated: Auto-pay due subscriptions)
 create or replace function generate_recurring_payments()
 returns void
 language plpgsql
 security definer
 as $$
+declare
+    sub RECORD;
 begin
-  -- Insert pending payments for subscriptions due in the next 30 days
-  -- Prevents duplicates by checking if payment already exists
-  insert into public.payments (subscription_id, user_id, amount, currency, due_date, status)
-  select 
-    s.id,
-    s.user_id,
-    s.amount, 
-    s.currency, 
-    s.next_payment_date, 
-    'pending'
-  from public.subscriptions s
-  where s.next_payment_date <= current_date + interval '30 days'
-  and s.status = 'active'
-  and not exists (
-    select 1 from public.payments p
-    where p.subscription_id = s.id
-    and p.due_date = s.next_payment_date
-  );
+  -- 1. Find active subscriptions that are due (or overdue)
+  for sub in 
+    select * from public.subscriptions 
+    where next_payment_date <= current_date 
+    and status = 'active'
+  loop
+    -- 2. Insert a 'paid' payment record immediately
+    insert into public.payments (
+        subscription_id, 
+        user_id, 
+        amount, 
+        currency, 
+        due_date, 
+        paid_at, 
+        status
+    ) values (
+        sub.id,
+        sub.user_id,
+        sub.amount, 
+        sub.currency, 
+        sub.next_payment_date, 
+        now(), -- Paid just now
+        'paid' -- Status is paid
+    );
 
-  -- Update subscription next_payment_date for payments that are overdue
-  update public.subscriptions
-  set next_payment_date = case 
-      when billing_period = 'monthly' then next_payment_date + interval '1 month'
-      when billing_period = 'yearly' then next_payment_date + interval '1 year'
-      else next_payment_date + interval '1 month'
-    end
-  where next_payment_date < current_date
-  and status = 'active';
+    -- 3. Update the subscription's next payment date
+    update public.subscriptions
+    set next_payment_date = case 
+        when billing_period = 'monthly' then next_payment_date + interval '1 month'
+        when billing_period = 'yearly' then next_payment_date + interval '1 year'
+        else next_payment_date + interval '1 month'
+      end,
+      updated_at = now()
+    where id = sub.id;
+    
+  end loop;
 end;
 $$;
 
--- 4. Schedule cron job (Runs heavily: every minute)
-select cron.schedule(
-  'generate-payments-minutely',
-  '* * * * *',
-  'select generate_recurring_payments()'
-);
+-- Note: The cron job 'generate-payments-minutely' is already scheduled and calls this function.
+-- So simply replacing this function definition is enough for the change to take effect.

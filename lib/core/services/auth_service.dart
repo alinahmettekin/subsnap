@@ -1,4 +1,8 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'dart:developer';
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../utils/constants.dart';
@@ -30,38 +34,123 @@ class AuthService {
   }
 
   Future<void> signInWithGoogle() async {
-    print('DEBUG: Starting Google Sign-In sequence');
-    // Not: Web Client ID, Supabase Dashboard > Auth > Providers > Google kÄ±smÄ±ndan alÄ±nmalÄ±.
+    log('DEBUG: Starting Google Sign-In sequence');
+    // Not: Web Client ID, Supabase Dashboard > Auth > Providers > Google kısmından alınmalı.
     const webClientId = AppConstants.googleWebClientId;
+    log('DEBUG: Using Web Client ID: $webClientId');
 
     try {
       final googleSignIn = GoogleSignIn.instance;
 
-      // Initialize GoogleSignIn with serverClientId (v7.x API)
+      // Force disconnect and sign out to clear potentially stuck tokens
+      try {
+        await googleSignIn.disconnect();
+        await googleSignIn.signOut();
+      } catch (_) {}
+
+      // Initialize with serverClientId
+      // Note: scopes are configured via Google Cloud Console or defaults (email, profile)
       await googleSignIn.initialize(serverClientId: webClientId);
+      log('DEBUG: Attempting Google authentication with initialized instance...');
 
-      print('DEBUG: Attempting Google authentication');
+      // Use authenticate() as signIn() is deprecated/removed in v7
+      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
 
-      // Authenticate user (v7.x API - only method available)
-      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
-
-      print('DEBUG: Fetching authentication tokens');
-      final googleAuth = googleUser.authentication;
-      final idToken = googleAuth.idToken;
-
-      print('DEBUG: idToken obtained: ${idToken != null}');
-
-      if (idToken == null) {
-        throw 'Google idToken alÄ±namadÄ±.';
+      if (googleUser == null) {
+        log('DEBUG: Google Sign-In canceled by user.');
+        return;
       }
 
-      print('DEBUG: Signing in to Supabase with idToken');
+      log('DEBUG: User authenticated: ${googleUser.email}');
+      log('DEBUG: Fetching authentication tokens...');
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+
+      log('DEBUG: idToken obtained: ${idToken != null ? "YES (Length: ${idToken.length})" : "NO"}');
+
+      if (idToken == null) {
+        throw 'Google idToken alınamadı.';
+      }
+
+      _logJwtDebug(idToken);
+
+      log('DEBUG: Signing in to Supabase with idToken');
+      // Supabase signInWithIdToken usually requires idToken.
+
       final response = await _client.auth.signInWithIdToken(provider: OAuthProvider.google, idToken: idToken);
 
-      print('DEBUG: Supabase sign-in response: ${response.user?.id}');
-    } catch (e) {
-      print('DEBUG: Google Sign-In error details: $e');
+      log('DEBUG: Supabase sign-in response User ID: ${response.user?.id}');
+    } on PlatformException catch (e, stack) {
+      log('CRITICAL: Google Sign-In PlatformException!');
+      log('Code: ${e.code}');
+      log('Message: ${e.message}');
+      log('Stacktrace: $stack');
+
+      // Return user-friendly error for common Google Sign In errors
+      if (e.code == 'network_error') {
+        throw 'Lütfen internet bağlantınızı kontrol edin.';
+      } else if (e.code == 'sign_in_canceled') {
+        throw 'Giriş işlemi iptal edildi.';
+      }
+
+      throw 'Play hizmetleri ile ilgili bir hata oldu.';
+    } catch (e, stack) {
+      log('CRITICAL: General Google Sign-In error details: $e');
+      log('Stacktrace: $stack');
+
+      final errorStr = e.toString();
+      // Check for specific Supabase/Google Auth errors
+      if (errorStr.contains('AuthApiException') ||
+          errorStr.contains('Bad ID token') ||
+          errorStr.contains('Google idToken alınamadı')) {
+        throw 'Play hizmetleri ile ilgili bir hata oldu.';
+      }
+
       rethrow;
+    }
+  }
+
+  Future<void> deleteAccount() async {
+    try {
+      await _client.rpc('delete_user_account');
+      await signOut();
+    } catch (e) {
+      log('Error deleting account: $e');
+      rethrow;
+    }
+  }
+
+  void _logJwtDebug(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        log('DEBUG: Token is not a valid JWT (3 parts expected).');
+        return;
+      }
+      var payload = parts[1];
+      // Normalize base64
+      switch (payload.length % 4) {
+        case 0:
+          break;
+        case 2:
+          payload += '==';
+          break;
+        case 3:
+          payload += '=';
+          break;
+      }
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final Map<String, dynamic> payloadMap = json.decode(decoded);
+
+      log('DEBUG: --- JWT ANALYSIS ---');
+      log('DEBUG: AUD (Audience): ${payloadMap['aud']}');
+      log('DEBUG: ISS (Issuer):   ${payloadMap['iss']}');
+      log('DEBUG: IAT (Issued At): ${DateTime.fromMillisecondsSinceEpoch((payloadMap['iat'] as int) * 1000)}');
+      log('DEBUG: EXP (Expiration): ${DateTime.fromMillisecondsSinceEpoch((payloadMap['exp'] as int) * 1000)}');
+      log('DEBUG: ---------------------');
+    } catch (e) {
+      log('DEBUG: Could not decode JWT for debug: $e');
     }
   }
 }

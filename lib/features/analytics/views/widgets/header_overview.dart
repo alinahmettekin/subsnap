@@ -62,26 +62,6 @@ class HeaderOverview extends ConsumerWidget {
                 Text(' / Ay', style: TextStyle(color: onSurfaceVariant, fontSize: 16)),
               ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.arrow_upward_rounded, color: Colors.green, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Geçen aya göre +%$growthPercentage',
-                    style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

@@ -33,7 +33,6 @@ class DashboardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -54,9 +53,7 @@ class DashboardHeader extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 'Aboneliklerinizi kontrol edin',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -66,17 +63,11 @@ class DashboardHeader extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withOpacity(0.2),
-                ),
+                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2)),
               ),
-              child: Icon(
-                Icons.person_outline_rounded,
-                color: theme.colorScheme.primary,
-                size: 28,
-              ),
+              child: Icon(Icons.person_outline_rounded, color: theme.colorScheme.primary, size: 28),
             ),
           ),
         ],

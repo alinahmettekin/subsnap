@@ -17,157 +17,182 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDestructive = _selectedOption == DeleteOption.subscriptionWithPayments;
 
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.warning_rounded, color: theme.colorScheme.error, size: 28),
-          const SizedBox(width: 12),
-          const Expanded(child: Text('Aboneliği Sil')),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '"${widget.subscriptionName}" aboneliğini silmek istediğinize emin misiniz?',
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 24),
-          Text('Silme Seçeneği:', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
+    return Dialog(
+      backgroundColor: theme.colorScheme.surface,
+      surfaceTintColor: Colors.transparent, // Remove default tint for cleaner look
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 1. Header Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: theme.colorScheme.error.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(Icons.delete_rounded, color: theme.colorScheme.error, size: 32),
+            ),
+            const SizedBox(height: 20),
 
-          // Option 1: Subscription Only
-          InkWell(
-            onTap: () => setState(() => _selectedOption = DeleteOption.subscriptionOnly),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: _selectedOption == DeleteOption.subscriptionOnly
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                color: _selectedOption == DeleteOption.subscriptionOnly
-                    ? theme.colorScheme.primaryContainer.withValues(alpha: 0.2)
-                    : Colors.transparent,
+            // 2. Title & Message
+            Text(
+              'Abonelik İşlemi',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
               ),
-              child: Row(
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.4),
                 children: [
-                  Radio<DeleteOption>(
-                    value: DeleteOption.subscriptionOnly,
-                    groupValue: _selectedOption,
-                    onChanged: (value) => setState(() => _selectedOption = value!),
+                  TextSpan(
+                    text: '"${widget.subscriptionName}"',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                   ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Sadece aboneliği sil',
-                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Geçmiş ödemeler korunur',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const TextSpan(text: ' aboneliği ile ne yapmak istersiniz?'),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 28),
 
-          // Option 2: Subscription + Payments
-          InkWell(
-            onTap: () => setState(() => _selectedOption = DeleteOption.subscriptionWithPayments),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: _selectedOption == DeleteOption.subscriptionWithPayments
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.outline.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                color: _selectedOption == DeleteOption.subscriptionWithPayments
-                    ? theme.colorScheme.errorContainer.withValues(alpha: 0.2)
-                    : Colors.transparent,
-              ),
-              child: Row(
-                children: [
-                  Radio<DeleteOption>(
-                    value: DeleteOption.subscriptionWithPayments,
-                    groupValue: _selectedOption,
-                    onChanged: (value) => setState(() => _selectedOption = value!),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Abonelik + geçmiş ödemeleri sil',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tüm veriler kalıcı olarak silinir',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            // 3. Selection Cards
+            _buildOptionCard(
+              theme: theme,
+              option: DeleteOption.subscriptionOnly,
+              title: 'Aboneliği İptal Et',
+              subtitle: 'Abonelik askıya alınır, ödeme geçmişi korunur.',
+              icon: Icons.inventory_2_outlined,
+              isSelected: _selectedOption == DeleteOption.subscriptionOnly,
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            _buildOptionCard(
+              theme: theme,
+              option: DeleteOption.subscriptionWithPayments,
+              title: 'Tamamen Kaldır',
+              subtitle: 'Abonelik ve tüm geçmiş veriler kalıcı olarak silinir.',
+              icon: Icons.delete_forever_outlined,
+              isSelected: _selectedOption == DeleteOption.subscriptionWithPayments,
+              isDestructiveOption: true,
+            ),
 
-          // Warning message
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
+            const SizedBox(height: 32),
+
+            // 4. Action Buttons
+            Row(
               children: [
-                Icon(Icons.info_outline, size: 20, color: theme.colorScheme.error),
-                const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    'Bu işlem geri alınamaz!',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.error,
-                      fontWeight: FontWeight.w600,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      foregroundColor: theme.colorScheme.onSurfaceVariant,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Vazgeç', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context, _selectedOption);
+                    },
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: isDestructive
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.surfaceContainerHighest,
+                      foregroundColor: isDestructive ? theme.colorScheme.onError : theme.colorScheme.onSurface,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text(
+                      isDestructive ? 'Tamamen Sil' : 'İptal Et',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDestructive ? theme.colorScheme.onError : theme.colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('İptal')),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(_selectedOption),
-          style: FilledButton.styleFrom(backgroundColor: theme.colorScheme.error),
-          child: const Text('Sil'),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildOptionCard({
+    required ThemeData theme,
+    required DeleteOption option,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    bool isDestructiveOption = false,
+  }) {
+    final activeColor = isDestructiveOption ? theme.colorScheme.error : theme.colorScheme.primary;
+    final borderColor = isSelected ? activeColor : theme.colorScheme.outline.withValues(alpha: 0.15);
+    final bgColor = isSelected ? activeColor.withValues(alpha: 0.05) : Colors.transparent;
+    final iconColor = isSelected ? activeColor : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
+
+    return InkWell(
+      onTap: () => setState(() => _selectedOption = option),
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+              ),
+              child: Icon(icon, size: 22, color: iconColor),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? activeColor : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(Icons.check_circle_rounded, color: activeColor, size: 20),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

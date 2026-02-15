@@ -21,7 +21,7 @@ final class PaymentServiceProvider
         argument: null,
         retry: null,
         name: r'paymentServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -48,7 +48,7 @@ final class PaymentServiceProvider
   }
 }
 
-String _$paymentServiceHash() => r'ade536f3c332913b7fe0775069a87cb805be598c';
+String _$paymentServiceHash() => r'59ebb41b803bf6b01abc8588088376f93c8a3cda';
 
 @ProviderFor(upcomingPayments)
 final upcomingPaymentsProvider = UpcomingPaymentsProvider._();
@@ -126,4 +126,4 @@ final class PaymentHistoryProvider
   }
 }
 
-String _$paymentHistoryHash() => r'1664cc627c4938d5ae22455fcb62925112bfc185';
+String _$paymentHistoryHash() => r'bda458cbc7652a70383bb589e77014050e410016';

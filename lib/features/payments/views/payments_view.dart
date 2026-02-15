@@ -1,10 +1,13 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/subscription_service.dart';
 import 'package:intl/intl.dart';
 import '../../subscriptions/providers/subscription_provider.dart';
 import '../../cards/providers/card_provider.dart';
 import '../services/payment_service.dart';
 import '../../subscriptions/views/widgets/subscription_icon.dart';
+import 'add_payment_view.dart';
+import '../../subscriptions/views/paywall_view.dart';
 
 class PaymentsView extends ConsumerWidget {
   const PaymentsView({super.key});
@@ -24,6 +27,27 @@ class PaymentsView extends ConsumerWidget {
           ),
         ),
         body: const TabBarView(children: [_PaymentsList(isHistory: false), _PaymentsList(isHistory: true)]),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 100.0),
+          child: FloatingActionButton(
+            onPressed: () {
+              final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
+              if (!isPremium) {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
+                return;
+              }
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const AddPaymentView(),
+              );
+            },
+            tooltip: 'Ödeme Ekle',
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimaryContainer),
+          ),
+        ),
       ),
     );
   }
@@ -37,7 +61,7 @@ class _PaymentsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final paymentsAsync = isHistory ? ref.watch(paymentHistoryProvider) : ref.watch(upcomingPaymentsProvider);
-    final subscriptionsAsync = ref.watch(subscriptionsProvider);
+    final subscriptionsAsync = ref.watch(allSubscriptionsProvider);
     final cardsAsync = ref.watch(cardsProvider);
 
     return paymentsAsync.when(
@@ -119,12 +143,15 @@ class _PaymentsList extends ConsumerWidget {
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      card != null ? '${card.cardName} (**** ${card.lastFour})' : 'Kart Seçilmedi',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                        fontSize: 12,
-                                        fontStyle: card == null ? FontStyle.italic : FontStyle.normal,
+                                    Expanded(
+                                      child: Text(
+                                        card != null ? '${card.cardName} ${card.lastFour}' : 'Kart Seçilmedi',
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          fontSize: 12,
+                                          fontStyle: card == null ? FontStyle.italic : FontStyle.normal,
+                                        ),
+                                        // Removed maxLines so it wraps to the next line
                                       ),
                                     ),
                                   ],
@@ -144,80 +171,15 @@ class _PaymentsList extends ConsumerWidget {
                                   color: isHistory ? Colors.green : Theme.of(context).colorScheme.error,
                                 ),
                               ),
-                              if (!isHistory &&
-                                  !DateUtils.dateOnly(payment.dueDate).isAfter(DateUtils.dateOnly(DateTime.now())))
-                                InkWell(
-                                  onTap: () async {
-                                    try {
-                                      await ref.read(paymentServiceProvider).createPayment(payment);
-
-                                      if (subscription != null) {
-                                        DateTime nextDate = payment.dueDate;
-                                        if (subscription.billingCycle == 'monthly') {
-                                          int newYear = nextDate.year;
-                                          int newMonth = nextDate.month + 1;
-                                          if (newMonth > 12) {
-                                            newMonth = 1;
-                                            newYear++;
-                                          }
-                                          int lastDay = DateTime(newYear, newMonth + 1, 0).day;
-                                          int newDay = nextDate.day > lastDay ? lastDay : nextDate.day;
-                                          nextDate = DateTime(
-                                            newYear,
-                                            newMonth,
-                                            newDay,
-                                            nextDate.hour,
-                                            nextDate.minute,
-                                          );
-                                        } else {
-                                          // Yearly
-                                          int newYear = nextDate.year + 1;
-                                          int newMonth = nextDate.month;
-                                          int lastDay = DateTime(newYear, newMonth + 1, 0).day;
-                                          int newDay = nextDate.day > lastDay ? lastDay : nextDate.day;
-                                          nextDate = DateTime(
-                                            newYear,
-                                            newMonth,
-                                            newDay,
-                                            nextDate.hour,
-                                            nextDate.minute,
-                                          );
-                                        }
-                                        await ref
-                                            .read(subscriptionRepositoryProvider)
-                                            .updateSubscriptionDate(subscription.id, nextDate);
-                                      }
-
-                                      ref.invalidate(upcomingPaymentsProvider);
-                                      ref.invalidate(paymentHistoryProvider);
-                                      ref.invalidate(subscriptionsProvider);
-
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Ödeme başarıyla kaydedildi ve bir sonraki tarih güncellendi',
-                                            ),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(top: 4, left: 8),
-                                    child: Text(
-                                      'Ödendi İşaretle',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                              if (!isHistory)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    'Otomatik Ödenecek',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
                                     ),
                                   ),
                                 ),

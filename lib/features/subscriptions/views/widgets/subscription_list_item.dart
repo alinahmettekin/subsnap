@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../models/subscription.dart';
 
 class SubscriptionListItem extends StatelessWidget {
@@ -7,12 +6,7 @@ class SubscriptionListItem extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
-  const SubscriptionListItem({
-    super.key,
-    required this.subscription,
-    required this.onTap,
-    required this.onDelete,
-  });
+  const SubscriptionListItem({super.key, required this.subscription, required this.onTap, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +18,10 @@ class SubscriptionListItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(isDark ? 0.3 : 0.6),
-          width: 0.8,
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6), width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(isDark ? 0.1 : 0.05),
+            color: theme.colorScheme.shadow.withValues(alpha: isDark ? 0.1 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -86,7 +77,7 @@ class SubscriptionListItem extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getDaysRemainingColor(context).withOpacity(0.1),
+                        color: _getDaysRemainingColor(context).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -115,16 +106,13 @@ class SubscriptionListItem extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
         child: Text(
           subscription.name.isNotEmpty ? subscription.name[0].toUpperCase() : '?',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          ),
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
         ),
       ),
     );
