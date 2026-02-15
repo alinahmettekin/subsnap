@@ -16,8 +16,7 @@ CREATE POLICY "Users can manage their own profile" ON profiles
 -- 2. Create Categories table
 CREATE TABLE IF NOT EXISTS categories (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE, -- NULL for global/default categories
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     icon_name TEXT,
     color TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -32,13 +31,12 @@ END $$;
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can manage their own categories" ON categories;
+-- Allow everyone to read categories
 DROP POLICY IF EXISTS "Users can view categories" ON categories;
-CREATE POLICY "Users can view categories" ON categories
-    FOR SELECT USING (user_id IS NULL OR user_id = auth.uid());
+CREATE POLICY "Everyone can view categories" ON categories
+    FOR SELECT USING (true);
 
-CREATE UNIQUE INDEX IF NOT EXISTS categories_name_default_key ON categories (name) WHERE user_id IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS categories_name_user_key ON categories (name, user_id) WHERE user_id IS NOT NULL;
+-- Only service_role (admins) can insert/update/delete (implicitly denied for others by default)
 
 -- 3. Create Cards table
 CREATE TABLE IF NOT EXISTS cards (
@@ -124,6 +122,7 @@ CREATE POLICY "Users can manage their own subscriptions" ON subscriptions
 -- 6. Create Payments history table
 CREATE TABLE IF NOT EXISTS payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- Ensure cascading delete from auth.users
     subscription_id UUID REFERENCES subscriptions(id) ON DELETE CASCADE NOT NULL,
     card_id UUID REFERENCES cards(id) ON DELETE SET NULL,
     amount NUMERIC(10, 2) NOT NULL,
@@ -183,7 +182,6 @@ CREATE TRIGGER on_auth_user_created
 -- 7.5 Create Support Requests table
 CREATE TABLE IF NOT EXISTS support_requests (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('service_request', 'feedback')),
     content TEXT NOT NULL,
     service_name TEXT, -- Only for service_request
@@ -199,7 +197,7 @@ CREATE POLICY "Users can manage their own requests" ON support_requests
 
 -- 8. Insert default categories
 -- Ensure name is unique for global categories
-CREATE UNIQUE INDEX IF NOT EXISTS categories_name_default_key ON categories (name) WHERE user_id IS NULL;
+
 
 -- 9. Insert default services with Category Links
 -- Ensure service name is unique
@@ -221,34 +219,34 @@ DECLARE
     cat_other uuid;
 BEGIN
     -- 1. Kategorileri Ekle/Güncelle (Türkçe)
-    INSERT INTO categories (name, color, icon_name) VALUES ('Dijital Platformlar', '#E50914', 'film') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Araçlar', '#007AFF', 'cloud') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Finans', '#34C759', 'attach_money') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('İş & Kariyer', '#5856D6', 'work') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Yazılım', '#FF9500', 'code') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Eğitim', '#FF2D55', 'school') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Tasarım', '#AF52DE', 'palette') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Yapay Zeka', '#00C7BE', 'psychology') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Alışveriş', '#FF3B30', 'shopping_bag') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Dijital Platformlar', '#E50914', 'film') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Araçlar', '#007AFF', 'cloud') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Finans', '#34C759', 'attach_money') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('İş & Kariyer', '#5856D6', 'work') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Yazılım', '#FF9500', 'code') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Eğitim', '#FF2D55', 'school') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Tasarım', '#AF52DE', 'palette') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Yapay Zeka', '#00C7BE', 'psychology') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Alışveriş', '#FF3B30', 'shopping_bag') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
     
     -- Yeni Kategoriler
-    INSERT INTO categories (name, color, icon_name) VALUES ('Mobil Operatörler', '#34C759', 'phone') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('İnternet Servis Sağlayıcıları', '#007AFF', 'wifi') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
-    INSERT INTO categories (name, color, icon_name) VALUES ('Diğer', '#95A5A6', 'more_horiz') ON CONFLICT (name) WHERE user_id IS NULL DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Mobil Operatörler', '#34C759', 'phone') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('İnternet Servis Sağlayıcıları', '#007AFF', 'wifi') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
+    INSERT INTO categories (name, color, icon_name) VALUES ('Diğer', '#95A5A6', 'more_horiz') ON CONFLICT (name) DO UPDATE SET color = EXCLUDED.color;
 
     -- 2. ID'leri Değişkenlere Ata (Garanti Yöntem)
-    SELECT id INTO cat_streaming FROM categories WHERE name = 'Dijital Platformlar' AND user_id IS NULL;
-    SELECT id INTO cat_utility FROM categories WHERE name = 'Araçlar' AND user_id IS NULL;
-    SELECT id INTO cat_finance FROM categories WHERE name = 'Finans' AND user_id IS NULL;
-    SELECT id INTO cat_work FROM categories WHERE name = 'İş & Kariyer' AND user_id IS NULL;
-    SELECT id INTO cat_software FROM categories WHERE name = 'Yazılım' AND user_id IS NULL;
-    SELECT id INTO cat_education FROM categories WHERE name = 'Eğitim' AND user_id IS NULL;
-    SELECT id INTO cat_design FROM categories WHERE name = 'Tasarım' AND user_id IS NULL;
-    SELECT id INTO cat_ai FROM categories WHERE name = 'Yapay Zeka' AND user_id IS NULL;
-    SELECT id INTO cat_shopping FROM categories WHERE name = 'Alışveriş' AND user_id IS NULL;
-    SELECT id INTO cat_mobile FROM categories WHERE name = 'Mobil Operatörler' AND user_id IS NULL;
-    SELECT id INTO cat_isp FROM categories WHERE name = 'İnternet Servis Sağlayıcıları' AND user_id IS NULL;
-    SELECT id INTO cat_other FROM categories WHERE name = 'Diğer' AND user_id IS NULL;
+    SELECT id INTO cat_streaming FROM categories WHERE name = 'Dijital Platformlar';
+    SELECT id INTO cat_utility FROM categories WHERE name = 'Araçlar';
+    SELECT id INTO cat_finance FROM categories WHERE name = 'Finans';
+    SELECT id INTO cat_work FROM categories WHERE name = 'İş & Kariyer';
+    SELECT id INTO cat_software FROM categories WHERE name = 'Yazılım';
+    SELECT id INTO cat_education FROM categories WHERE name = 'Eğitim';
+    SELECT id INTO cat_design FROM categories WHERE name = 'Tasarım';
+    SELECT id INTO cat_ai FROM categories WHERE name = 'Yapay Zeka';
+    SELECT id INTO cat_shopping FROM categories WHERE name = 'Alışveriş';
+    SELECT id INTO cat_mobile FROM categories WHERE name = 'Mobil Operatörler';
+    SELECT id INTO cat_isp FROM categories WHERE name = 'İnternet Servis Sağlayıcıları';
+    SELECT id INTO cat_other FROM categories WHERE name = 'Diğer';
 
     -- 3. Servisleri Ekle (Kategori ID'leri ile)
     -- Streaming & Entertainment (Dijital Platformlar)
@@ -325,7 +323,71 @@ RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  current_user_id UUID;
 BEGIN
-  DELETE FROM auth.users WHERE id = auth.uid();
+  current_user_id := auth.uid();
+
+  -- 1. Önce bağımlı tabloları temizle (Foreign Key hatasını önlemek için)
+  DELETE FROM public.payments WHERE user_id = current_user_id;
+  DELETE FROM public.subscriptions WHERE user_id = current_user_id;
+  DELETE FROM public.cards WHERE user_id = current_user_id;
+  -- Categories are now global, no user-specific categories to delete.
+  -- DELETE FROM public.categories WHERE user_id = current_user_id; 
+  DELETE FROM public.support_requests WHERE user_id = current_user_id;
+  
+  -- 2. Profil tablosunu temizle
+  DELETE FROM public.profiles WHERE id = current_user_id;
+
+  -- 3. En son Auth kullanıcısını sil
+  DELETE FROM auth.users WHERE id = current_user_id;
 END;
 $$;
+
+-- 11. FORCE FIX: Ensure Foreign Keys have ON DELETE CASCADE (Idempotent Fix)
+-- This block ensures that even if the tables already exist with restrictive constraints,
+-- they are updated to allow cascading deletes.
+DO $$
+BEGIN
+    -- Fix 'payments' table foreign key
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'payments_user_id_fkey' AND table_name = 'payments') THEN
+        ALTER TABLE payments DROP CONSTRAINT payments_user_id_fkey;
+    END IF;
+    
+    ALTER TABLE payments
+    ADD CONSTRAINT payments_user_id_fkey
+    FOREIGN KEY (user_id)
+    REFERENCES auth.users(id)
+    ON DELETE CASCADE;
+
+    -- Fix 'subscriptions' table foreign key (just in case)
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'subscriptions_user_id_fkey' AND table_name = 'subscriptions') THEN
+        ALTER TABLE subscriptions DROP CONSTRAINT subscriptions_user_id_fkey;
+    END IF;
+
+    ALTER TABLE subscriptions
+    ADD CONSTRAINT subscriptions_user_id_fkey
+    FOREIGN KEY (user_id)
+    REFERENCES profiles(id) -- Or auth.users, depending on preference. Profiles cascades from users, so it's safe.
+    ON DELETE CASCADE;
+    
+EXCEPTION
+    WHEN OTHERS THEN NULL; -- Ignore if already correct or other minor issues
+END $$;
+
+-- 12. FORCE FIX: Remove user_id from categories (Migration)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'user_id') THEN
+        ALTER TABLE categories DROP COLUMN user_id;
+    END IF;
+    
+    -- Clean up old indexes if they exist
+    DROP INDEX IF EXISTS categories_name_default_key;
+    DROP INDEX IF EXISTS categories_name_user_key;
+    
+    -- Ensure new unique constraint
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'categories_name_key' AND table_name = 'categories') THEN
+         ALTER TABLE categories ADD CONSTRAINT categories_name_key UNIQUE (name);
+    END IF;
+END $$;

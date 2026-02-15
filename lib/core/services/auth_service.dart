@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
 import 'subscription_service.dart';
 
@@ -30,7 +31,18 @@ class AuthService {
 
   Future<void> signOut() async {
     await SubscriptionService.logOut();
+    await _clearLocalData();
     await _client.auth.signOut();
+  }
+
+  Future<void> _clearLocalData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Wipes all local preferences
+      log('DEBUG: Local SharedPreferences cleared.');
+    } catch (e) {
+      log('DEBUG: Error clearing local SharedPreferences: $e');
+    }
   }
 
   Future<void> signInWithGoogle() async {
