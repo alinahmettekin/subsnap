@@ -39,4 +39,3 @@ class AuthWrapper extends ConsumerWidget {
 final authStateProvider = StreamProvider((ref) {
   return ref.watch(authServiceProvider).authStateChanges.map((event) => event.session);
 });
-

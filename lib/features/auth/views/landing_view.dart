@@ -27,8 +27,8 @@ class LandingView extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(),
-                Icon(Icons.auto_graph_rounded, size: 100, color: theme.colorScheme.primary),
-                const SizedBox(height: 48),
+                Image.asset('assets/branding/splash_logo.png', height: 240),
+                const SizedBox(height: 32),
                 Text(
                   'SubSnap',
                   style: theme.textTheme.displayMedium?.copyWith(
