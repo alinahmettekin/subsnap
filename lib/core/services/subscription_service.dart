@@ -83,10 +83,3 @@ Stream<bool> isPremium(Ref ref) {
   return controller.stream;
 }
 
-@riverpod
-class PremiumStatus extends _$PremiumStatus {
-  @override
-  bool build() => false;
-
-  void setStatus(bool status) => state = status;
-}
