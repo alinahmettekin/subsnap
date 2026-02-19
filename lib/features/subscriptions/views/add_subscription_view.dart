@@ -14,6 +14,8 @@ import '../models/service.dart';
 import '../../../../core/utils/icon_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../payments/services/payment_service.dart';
+import 'package:flutter/services.dart';
+import '../../../../core/widgets/custom_date_picker.dart';
 
 class AddSubscriptionView extends ConsumerStatefulWidget {
   const AddSubscriptionView({super.key});
@@ -30,6 +32,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   String _billingCycle = 'monthly';
   String _currency = '₺';
   DateTime _nextBillingDate = DateTime.now();
+  DateTime _startDate = DateTime.now();
   String? _selectedCategoryId;
   String? _selectedServiceId;
   String? _selectedCardId;
@@ -49,40 +52,49 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
     super.dispose();
   }
 
-  Future<void> _selectDate() async {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => Container(
-        height: 280,
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Bitti', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-            Expanded(
-              child: CupertinoDatePicker(
-                initialDateTime: _nextBillingDate,
-                mode: CupertinoDatePickerMode.date,
-                dateOrder: DatePickerDateOrder.dmy,
-                use24hFormat: true,
-                minimumDate: DateTime(2000),
-                maximumDate: DateTime.now().add(const Duration(days: 365 * 10)),
-                onDateTimeChanged: (val) {
-                  setState(() => _nextBillingDate = val);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+  Future<void> _selectStartDate() async {
+    await showCustomDatePicker(
+      context,
+      initialDate: _startDate,
+      minDate: DateTime(2024),
+      onDateChanged: (val) {
+        setState(() {
+          _startDate = val;
+          _calculateNextBillingDate();
+        });
+      },
     );
+  }
+
+  void _calculateNextBillingDate() {
+    DateTime calculatedDate = _startDate;
+    final now = DateTime.now();
+
+    // If start date is in the future, next billing is start date
+    if (calculatedDate.isAfter(now)) {
+      _nextBillingDate = calculatedDate;
+      return;
+    }
+
+    // Otherwise, add periods until we pass today
+    while (calculatedDate.isBefore(now) || isSameDay(calculatedDate, now)) {
+      if (_billingCycle == 'weekly') {
+        calculatedDate = calculatedDate.add(const Duration(days: 7));
+      } else if (_billingCycle == 'monthly') {
+        calculatedDate = DateTime(calculatedDate.year, calculatedDate.month + 1, calculatedDate.day);
+      } else if (_billingCycle == '3_months') {
+        calculatedDate = DateTime(calculatedDate.year, calculatedDate.month + 3, calculatedDate.day);
+      } else if (_billingCycle == '6_months') {
+        calculatedDate = DateTime(calculatedDate.year, calculatedDate.month + 6, calculatedDate.day);
+      } else {
+        calculatedDate = DateTime(calculatedDate.year + 1, calculatedDate.month, calculatedDate.day);
+      }
+    }
+    _nextBillingDate = calculatedDate;
+  }
+
+  bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   Future<void> _submit() async {
@@ -100,7 +112,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
     final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
     final currentSubscriptions = ref.read(subscriptionsProvider).asData?.value ?? [];
 
-    if (!isPremium && currentSubscriptions.length >= 3) {
+    if (!isPremium && currentSubscriptions.length >= 6) {
       if (mounted) {
         setState(() => _isLoading = false);
         showDialog(
@@ -108,7 +120,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
           builder: (context) => AlertDialog(
             title: const Text('Üyelik Limiti'),
             content: const Text(
-              'Ücretsiz planda en fazla 3 abonelik ekleyebilirsiniz. Sınırsız ekleme yapmak için Premium\'a geçin.',
+              'Ücretsiz planda en fazla 6 abonelik ekleyebilirsiniz. Sınırsız ekleme yapmak için Premium\'a geçin.',
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
@@ -164,6 +176,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
         categoryId: _selectedCategoryId,
         cardId: _selectedCardId,
         serviceId: _selectedServiceId,
+        startDate: _startDate,
       );
 
       debugPrint('DEBUG: Subscription object created: ${sub.toJson()}');
@@ -278,7 +291,8 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                       controller: _priceController,
                       focusNode: _priceFocusNode,
                       decoration: _inputDecoration('Tutar'),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$'))],
                       validator: (v) => v == null || v.isEmpty ? 'Gerekli' : null,
                     ),
                   ),
@@ -298,10 +312,18 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                 initialValue: _billingCycle,
                 decoration: _inputDecoration('Ödeme Periyodu'),
                 items: const [
+                  DropdownMenuItem(value: 'weekly', child: Text('Haftalık')),
                   DropdownMenuItem(value: 'monthly', child: Text('Aylık')),
+                  DropdownMenuItem(value: '3_months', child: Text('3 Aylık')),
+                  DropdownMenuItem(value: '6_months', child: Text('6 Aylık')),
                   DropdownMenuItem(value: 'yearly', child: Text('Yıllık')),
                 ],
-                onChanged: (v) => setState(() => _billingCycle = v!),
+                onChanged: (v) {
+                  setState(() {
+                    _billingCycle = v!;
+                    _calculateNextBillingDate();
+                  });
+                },
               ),
               const SizedBox(height: 16),
               categoriesAsync.when(
@@ -379,27 +401,29 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
               ),
               const SizedBox(height: 16),
               InkWell(
-                onTap: _selectDate,
-                borderRadius: BorderRadius.circular(24),
+                onTap: _selectStartDate,
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Sıradaki Ödeme', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
+                          Text('Başlangıç Tarihi', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
                           const SizedBox(height: 2),
                           Text(
-                            DateFormat('dd MMMM yyyy', 'tr_TR').format(_nextBillingDate),
-                            style: const TextStyle(fontSize: 16),
+                            DateFormat('dd MMMM yyyy', 'tr_TR').format(_startDate),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
+                      const Icon(Icons.calendar_today_rounded, size: 20, color: Colors.grey),
                     ],
                   ),
                 ),
@@ -537,12 +561,13 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   }
 
   InputDecoration _inputDecoration(String label) {
-    final radius = BorderRadius.circular(24);
+    final radius = BorderRadius.circular(16);
     return InputDecoration(
       labelText: label,
+      labelStyle: const TextStyle(fontSize: 13),
       filled: true,
       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(

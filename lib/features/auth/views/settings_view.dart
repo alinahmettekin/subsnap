@@ -103,7 +103,7 @@ class SettingsView extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Ayarlar'), centerTitle: true),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
         children: [
           Center(
             child: Column(
@@ -135,13 +135,7 @@ class SettingsView extends ConsumerWidget {
                   value: isPremium ? 'Premium' : 'Ücretsiz Plan',
                   iconColor: Colors.amber,
                 ),
-                const SizedBox(height: 8),
-                _SettingsTile(
-                  icon: Icons.help_outline_rounded,
-                  title: 'Yardım ve Destek',
-                  value: 'SSS & İletişim',
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportView())),
-                ),
+
                 const SizedBox(height: 8),
                 _SettingsTile(
                   icon: Icons.credit_card_rounded,
@@ -172,6 +166,12 @@ class SettingsView extends ConsumerWidget {
             ),
           ),
           const Divider(height: 32),
+          _SettingsTile(
+            icon: Icons.help_outline_rounded,
+            title: 'Yardım ve Destek',
+            value: 'SSS & İletişim',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportView())),
+          ),
           const SizedBox(height: 32),
           OutlinedButton.icon(
             onPressed: () async {

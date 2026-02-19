@@ -49,7 +49,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
@@ -60,16 +60,20 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Header Row
-          InkWell(
+          GestureDetector(
             onTap: _toggleExpanded,
-            borderRadius: BorderRadius.circular(12),
+            behavior: HitTestBehavior.opaque,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
                     'Kategori Analizi',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: onSurface),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: onSurface,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 // Toggle Button (Visible only when expanded, or always? Let's hide when collapsed for cleaner look)
@@ -78,7 +82,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     padding: const EdgeInsets.all(4),
                     child: Row(
@@ -160,7 +164,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                         color: categoryColors[catId] ?? theme.colorScheme.primary,
                         value: value,
                         title: '',
-                        radius: 24, // Slightly thicker ring
+                        radius: 20, // Slightly thicker ring
                         showTitle: false,
                       );
                     }).toList();
@@ -169,14 +173,14 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                       children: [
                         // Donut Chart
                         SizedBox(
-                          height: 200,
+                          height: 160,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
                               PieChart(
                                 PieChartData(
                                   sections: sections,
-                                  centerSpaceRadius: 65,
+                                  centerSpaceRadius: 55,
                                   sectionsSpace: 4,
                                   startDegreeOffset: -90,
                                 ),
@@ -186,7 +190,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                                 children: [
                                   Text(
                                     '₺${totalCost.toStringAsFixed(0)}',
-                                    style: theme.textTheme.headlineMedium?.copyWith(
+                                    style: theme.textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: onSurface,
                                       letterSpacing: -1,
@@ -311,13 +315,13 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
     final isSelected = _isMonthly == isMonthlyOption;
     return InkWell(
       onTap: () => setState(() => _isMonthly = isMonthlyOption),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(6),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: isSelected ? theme.colorScheme.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(6),
           boxShadow: isSelected
               ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2))]
               : [],
@@ -327,6 +331,7 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
           style: theme.textTheme.labelSmall?.copyWith(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
+            fontSize: 9,
           ),
         ),
       ),

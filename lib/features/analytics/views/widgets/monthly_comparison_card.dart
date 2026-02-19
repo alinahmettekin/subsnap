@@ -41,16 +41,9 @@ class _MonthlyComparisonCardState extends ConsumerState<MonthlyComparisonCard> {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.1),
-            theme.colorScheme.secondary.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2)),
       ),
@@ -106,19 +99,24 @@ class _MonthlyComparisonCardState extends ConsumerState<MonthlyComparisonCard> {
                   : (isDecrease ? Icons.arrow_downward_rounded : Icons.remove_rounded);
 
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  InkWell(
+                  GestureDetector(
                     onTap: _toggleExpanded,
-                    borderRadius: BorderRadius.circular(8),
+                    behavior: HitTestBehavior.opaque,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Aylık Karşılaştırma',
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Text(
+                              'Aylık Karşılaştırma',
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                           Icon(
                             _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
@@ -129,48 +127,66 @@ class _MonthlyComparisonCardState extends ConsumerState<MonthlyComparisonCard> {
                     ),
                   ),
                   if (_isExpanded) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Bu Ay',
-                              style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '₺${thisMonthTotal.toStringAsFixed(0)}',
-                              style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bu Ay',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '₺${thisMonthTotal.toStringAsFixed(0)}',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: changeColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(icon, size: 16, color: changeColor),
+                              Icon(icon, size: 14, color: changeColor),
                               const SizedBox(width: 4),
                               Text(
                                 '${change.abs().toStringAsFixed(1)}%',
-                                style: TextStyle(color: changeColor, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 11),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Geçen ay ₺${lastMonthTotal.toStringAsFixed(0)} harcadınız.',
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    const SizedBox(height: 8),
+                    // Text(
+                    //   'Geçen ay ₺${lastMonthTotal.toStringAsFixed(0)} harcadınız.',
+                    //   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    // ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Geçen ay: ₺${lastMonthTotal.toStringAsFixed(0)}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 10,
+                        ),
+                      ),
                     ),
                   ],
                 ],

@@ -423,18 +423,15 @@ class _SubscriptionListTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        subscription.name,
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
+                      Text(subscription.name, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
                           Icon(Icons.calendar_today_rounded, size: 12, color: theme.colorScheme.onSurfaceVariant),
                           const SizedBox(width: 4),
                           Text(
                             DateFormat('dd MMM yyyy', 'tr_TR').format(subscription.nextBillingDate),
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -446,7 +443,7 @@ class _SubscriptionListTile extends StatelessWidget {
                   children: [
                     Text(
                       '${subscription.price} ${subscription.currency}',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: theme.colorScheme.primary,
                       ),
@@ -463,7 +460,7 @@ class _SubscriptionListTile extends StatelessWidget {
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onSecondaryContainer,
                           fontWeight: FontWeight.w600,
-                          fontSize: 10,
+                          fontSize: 9,
                         ),
                       ),
                     ),

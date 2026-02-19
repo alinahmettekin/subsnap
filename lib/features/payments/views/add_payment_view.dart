@@ -5,6 +5,7 @@ import '../../subscriptions/providers/subscription_provider.dart';
 import '../../subscriptions/models/subscription.dart';
 import '../services/payment_service.dart';
 import '../models/payment.dart';
+import '../../../../core/widgets/custom_date_picker.dart';
 
 class AddPaymentView extends ConsumerStatefulWidget {
   const AddPaymentView({super.key});
@@ -188,13 +189,13 @@ class _AddPaymentViewState extends ConsumerState<AddPaymentView> {
 
                     InkWell(
                       onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
+                        await showCustomDatePicker(
+                          context,
                           initialDate: _selectedDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime.now(),
+                          minDate: DateTime(2024),
+                          maxDate: DateTime.now(), // Payment date cannot be in future? Usually yes for past payments.
+                          onDateChanged: (val) => setState(() => _selectedDate = val),
                         );
-                        if (date != null) setState(() => _selectedDate = date);
                       },
                       borderRadius: BorderRadius.circular(16),
                       child: Container(

@@ -92,11 +92,11 @@ class _StatCard extends StatelessWidget {
     final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
 
     return Container(
-      height: 110, // Fixed height for consistency
-      padding: const EdgeInsets.all(16),
+      // height: 90, // Let content dictate height for now, or use smaller fixed height
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Column(
@@ -106,14 +106,25 @@ class _StatCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: TextStyle(color: onSurfaceVariant, fontSize: 13)),
-              Icon(icon, color: theme.colorScheme.primary.withValues(alpha: 0.8), size: 18),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.labelMedium?.copyWith(color: onSurfaceVariant, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(icon, color: theme.colorScheme.primary.withValues(alpha: 0.8), size: 16),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(color: onSurface, fontSize: valueFontSize, fontWeight: FontWeight.bold),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: value.length > 10 ? 12 : 14, // Dynamic sizing for long values
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

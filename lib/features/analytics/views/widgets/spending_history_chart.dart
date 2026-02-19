@@ -45,7 +45,7 @@ class _SpendingHistoryChartState extends ConsumerState<SpendingHistoryChart> {
     final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
@@ -58,7 +58,11 @@ class _SpendingHistoryChartState extends ConsumerState<SpendingHistoryChart> {
             children: [
               Text(
                 'Harcama Grafiği',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: onSurface),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: onSurface,
+                  fontSize: 12,
+                ),
               ),
               const Spacer(),
               if (_isExpanded)
@@ -168,7 +172,7 @@ class _SpendingHistoryChartState extends ConsumerState<SpendingHistoryChart> {
                 if (maxY == 0) maxY = 100; // Default scale
 
                 return SizedBox(
-                  height: 200,
+                  height: 160,
                   child: LineChart(
                     LineChartData(
                       gridData: FlGridData(
@@ -322,10 +326,10 @@ class _SpendingHistoryChartState extends ConsumerState<SpendingHistoryChart> {
       borderRadius: BorderRadius.circular(8),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: isSelected ? theme.colorScheme.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           boxShadow: isSelected
               ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2))]
               : [],
@@ -335,6 +339,7 @@ class _SpendingHistoryChartState extends ConsumerState<SpendingHistoryChart> {
           style: theme.textTheme.labelSmall?.copyWith(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
+            fontSize: 9,
           ),
         ),
       ),

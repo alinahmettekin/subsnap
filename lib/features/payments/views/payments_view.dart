@@ -62,7 +62,7 @@ class _PaymentsList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final paymentsAsync = isHistory ? ref.watch(paymentHistoryProvider) : ref.watch(upcomingPaymentsProvider);
     final subscriptionsAsync = ref.watch(allSubscriptionsProvider);
-    final cardsAsync = ref.watch(cardsProvider);
+    final cardsAsync = ref.watch(allCardsProvider);
 
     return paymentsAsync.when(
       data: (payments) {
@@ -98,7 +98,7 @@ class _PaymentsList extends ConsumerWidget {
 
                 return Scaffold(
                   body: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
                     itemCount: payments.length,
                     itemBuilder: (context, index) {
                       final payment = payments[index];
@@ -123,15 +123,19 @@ class _PaymentsList extends ConsumerWidget {
                                 ),
                           title: Text(
                             subscription?.name ?? 'Bilinmeyen Abonelik',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              const SizedBox(height: 4),
                               Text(
                                 isHistory
                                     ? 'Ödendi: ${DateFormat('dd MMM yyyy', 'tr_TR').format(payment.paidAt ?? payment.dueDate)}'
-                                    : 'Vade: ${DateFormat('dd MMM yyyy', 'tr_TR').format(payment.dueDate)}',
+                                    : 'Sonraki: ${DateFormat('dd MMM yyyy', 'tr_TR').format(payment.dueDate)}',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
@@ -146,12 +150,10 @@ class _PaymentsList extends ConsumerWidget {
                                     Expanded(
                                       child: Text(
                                         card != null ? '${card.cardName} ${card.lastFour}' : 'Kart Seçilmedi',
-                                        style: TextStyle(
+                                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                           color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                          fontSize: 12,
                                           fontStyle: card == null ? FontStyle.italic : FontStyle.normal,
                                         ),
-                                        // Removed maxLines so it wraps to the next line
                                       ),
                                     ),
                                   ],
@@ -165,25 +167,13 @@ class _PaymentsList extends ConsumerWidget {
                             children: [
                               Text(
                                 '${payment.amount} ${payment.currency}',
-                                style: TextStyle(
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
                                   color: isHistory ? Colors.green : Theme.of(context).colorScheme.error,
                                 ),
                               ),
-                              if (!isHistory)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'Otomatik Ödenecek',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              if (isHistory) const SizedBox(height: 20), // Placeholder for alignment
+
+                              if (isHistory) const SizedBox(height: 0),
                             ],
                           ),
                         ),

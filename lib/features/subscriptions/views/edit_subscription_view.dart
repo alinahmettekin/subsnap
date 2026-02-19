@@ -10,6 +10,9 @@ import '../../cards/views/add_card_view.dart';
 import '../../../../core/utils/icon_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../payments/services/payment_service.dart';
+import 'package:flutter/services.dart';
+import '../../../../core/services/subscription_service.dart';
+import 'paywall_view.dart';
 
 class EditSubscriptionView extends ConsumerStatefulWidget {
   final Subscription subscription;
@@ -94,6 +97,34 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
+    final currentSubscriptions = ref.read(subscriptionsProvider).asData?.value ?? [];
+
+    if (!isPremium && currentSubscriptions.length > 6) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Düzenleme Kısıtlı'),
+            content: const Text(
+              'Ücretsiz planda limitiniz (6) aşıldığı için düzenleme yapamazsınız. Önce bazı abonelikleri silin veya Premium\'a geçin.',
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
+                },
+                child: const Text('Premium\'a Geç'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -136,11 +167,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
 
   bool _hasChanges() {
     final sub = widget.subscription;
-
-    // Normalizing double for comparison
     final currentPrice = double.tryParse(_priceController.text) ?? 0.0;
-
-    // Checking date by Year, Month, Day to avoid time differences
     final isSameDate =
         sub.nextBillingDate.year == _nextBillingDate.year &&
         sub.nextBillingDate.month == _nextBillingDate.month &&
@@ -184,7 +211,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                 controller: _nameController,
                 decoration: _inputDecoration('Abonelik Adı'),
                 validator: (v) => v == null || v.isEmpty ? 'Lütfen bir ad girin' : null,
-                enabled: _selectedServiceId == null, // Disable if service
+                enabled: _selectedServiceId == null,
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 16),
@@ -196,7 +223,8 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                       controller: _priceController,
                       focusNode: _priceFocusNode,
                       decoration: _inputDecoration('Tutar'),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$'))],
                       validator: (v) => v == null || v.isEmpty ? 'Gerekli' : null,
                       onChanged: (_) => setState(() {}),
                     ),
@@ -207,9 +235,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                       initialValue: _currency,
                       decoration: _inputDecoration('Döviz'),
                       items: ['₺', '€', r'$'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) {
-                        setState(() => _currency = v!);
-                      },
+                      onChanged: (v) => setState(() => _currency = v!),
                     ),
                   ),
                 ],
@@ -219,54 +245,56 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                 initialValue: _billingCycle,
                 decoration: _inputDecoration('Ödeme Periyodu'),
                 items: const [
+                  DropdownMenuItem(value: 'weekly', child: Text('Haftalık')),
                   DropdownMenuItem(value: 'monthly', child: Text('Aylık')),
+                  DropdownMenuItem(value: '3_months', child: Text('3 Aylık')),
+                  DropdownMenuItem(value: '6_months', child: Text('6 Aylık')),
                   DropdownMenuItem(value: 'yearly', child: Text('Yıllık')),
                 ],
-                onChanged: (v) {
-                  setState(() => _billingCycle = v!);
-                },
+                onChanged: (v) => setState(() => _billingCycle = v!),
               ),
               const SizedBox(height: 16),
               categoriesAsync.when(
-                data: (cats) => DropdownButtonFormField<String>(
-                  initialValue: _selectedCategoryId,
-                  decoration: _inputDecoration('Kategori'),
-                  items: cats
-                      .map(
-                        (c) => DropdownMenuItem(
-                          value: c['id'] as String,
-                          child: Row(
-                            children: [
-                              if (c['icon_name'] != null)
-                                FaIcon(
-                                  IconHelper.getIcon(c['icon_name'] as String),
-                                  size: 18,
-                                  color: Theme.of(context).primaryColor,
-                                )
-                              else if (c['icon'] != null)
-                                Icon(_getIconData(c['icon'] as String), size: 18),
-                              const SizedBox(width: 8),
-                              Text(c['name'] as String),
-                            ],
-                          ),
+                data: (cats) {
+                  final currentId = cats.any((c) => c['id'] == _selectedCategoryId) ? _selectedCategoryId : null;
+                  return DropdownButtonFormField<String>(
+                    value: currentId,
+                    decoration: _inputDecoration('Kategori'),
+                    hint: const Text('Kategori Seçin'),
+                    items: cats.map((c) {
+                      return DropdownMenuItem(
+                        value: c['id'] as String,
+                        child: Row(
+                          children: [
+                            if (c['icon_name'] != null)
+                              FaIcon(
+                                IconHelper.getIcon(c['icon_name'] as String),
+                                size: 18,
+                                color: Theme.of(context).primaryColor,
+                              )
+                            else if (c['icon'] != null)
+                              Icon(_getIconData(c['icon'] as String), size: 18),
+                            const SizedBox(width: 8),
+                            Text(c['name'] as String),
+                          ],
                         ),
-                      )
-                      .toList(),
-                  onChanged: _selectedServiceId != null
-                      ? null
-                      : (v) => setState(() => _selectedCategoryId = v), // Disable if service
-                ),
+                      );
+                    }).toList(),
+                    onChanged: _selectedServiceId != null ? null : (v) => setState(() => _selectedCategoryId = v),
+                  );
+                },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Kategoriler yüklenemedi'),
+                error: (_, __) => const Text('Kategoriler yüklenemedi'),
               ),
               const SizedBox(height: 16),
               cardsAsync.when(
                 data: (cards) {
+                  final currentCardId = cards.any((c) => c.id == _selectedCardId) ? _selectedCardId : null;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedCardId,
+                        value: currentCardId,
                         decoration: _inputDecoration('Ödeme Yöntemi').copyWith(hintText: 'Kart Seçin (İsteğe Bağlı)'),
                         items: [
                           const DropdownMenuItem<String>(value: null, child: Text('Seçilmedi')),
@@ -298,7 +326,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const SizedBox(),
+                error: (_, __) => const SizedBox(),
               ),
               const SizedBox(height: 16),
               InkWell(

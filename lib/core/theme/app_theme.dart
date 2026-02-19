@@ -53,6 +53,7 @@ class AppTheme {
       swapLegacyOnMaterial3: true,
       // Modern Financial Font
       fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+      textTheme: _textTheme,
     );
   }
 
@@ -81,6 +82,83 @@ class AppTheme {
       swapLegacyOnMaterial3: true,
       // Modern Financial Font
       fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+      textTheme: _textTheme,
+    );
+  }
+
+  // Standardized Text Theme - Compact Style (Extra Reduced)
+  // Base: 12sp (Very compact mobile apps)
+  static TextTheme get _textTheme {
+    return TextTheme(
+      // Extra Large (18sp) - Page Titles
+      headlineMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: GoogleFonts.plusJakartaSans(
+        fontSize: 17,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+        letterSpacing: -0.5,
+      ),
+
+      // Large (14sp) - Section Headers / Usernames / Buttons
+      titleLarge: GoogleFonts.plusJakartaSans(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.25,
+        letterSpacing: -0.2,
+      ),
+      titleMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.25,
+        letterSpacing: -0.2,
+      ),
+
+      // Medium (12sp) - Body Text
+      bodyLarge: GoogleFonts.plusJakartaSans(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+        letterSpacing: -0.1,
+      ),
+      bodyMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        height: 1.4,
+        letterSpacing: -0.1,
+      ),
+
+      // Small (10sp) - Meta data
+      bodySmall: GoogleFonts.plusJakartaSans(
+        fontSize: 10,
+        fontWeight: FontWeight.normal,
+        height: 1.3,
+        letterSpacing: 0.1,
+      ),
+      labelLarge: GoogleFonts.plusJakartaSans(
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        height: 1.3,
+        letterSpacing: 0.1,
+      ),
+
+      // Extra Small (9sp) - Legal/Helpers
+      labelMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 9,
+        fontWeight: FontWeight.w500,
+        height: 1.2,
+        letterSpacing: 0.2,
+      ),
+      labelSmall: GoogleFonts.plusJakartaSans(
+        fontSize: 9,
+        fontWeight: FontWeight.w500,
+        height: 1.2,
+        letterSpacing: 0.2,
+      ),
     );
   }
 }

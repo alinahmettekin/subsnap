@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/card.dart' as card_model;
 import '../providers/card_provider.dart';
-import '../../../core/services/subscription_service.dart';
-import '../../subscriptions/views/paywall_view.dart';
 
-class AddCardView extends ConsumerStatefulWidget {
-  const AddCardView({super.key});
+class EditCardView extends ConsumerStatefulWidget {
+  final card_model.PaymentCard card;
+
+  const EditCardView({super.key, required this.card});
 
   @override
-  ConsumerState<AddCardView> createState() => _AddCardViewState();
+  ConsumerState<EditCardView> createState() => _EditCardViewState();
 }
 
-class _AddCardViewState extends ConsumerState<AddCardView> {
+class _EditCardViewState extends ConsumerState<EditCardView> {
   final _formKey = GlobalKey<FormState>();
-  final _cardNameController = TextEditingController();
-  final _lastFourController = TextEditingController();
+  late TextEditingController _cardNameController;
+  late TextEditingController _lastFourController;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cardNameController = TextEditingController(text: widget.card.cardName);
+    _lastFourController = TextEditingController(text: widget.card.lastFour);
+  }
 
   @override
   void dispose() {
@@ -29,63 +34,20 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen formdaki eksikleri tamamlayın')));
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    // Check card limit
-    final cards = ref.read(cardsProvider).asData?.value ?? [];
-    final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
-
-    if (!isPremium && cards.length >= 2) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Kart Limiti'),
-            content: const Text(
-              'Ücretsiz planda en fazla 2 kart ekleyebilirsiniz. Sınırsız kart eklemek için Premium\'a geçin.',
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
-              FilledButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
-                },
-                child: const Text('Premium\'a Geç'),
-              ),
-            ],
-          ),
-        );
-      }
-      return;
-    }
-
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('Kullanıcı girişi yapılmamış');
-      }
+      final updatedCard = widget.card.copyWith(cardName: _cardNameController.text, lastFour: _lastFourController.text);
 
-      final card = card_model.PaymentCard(
-        id: const Uuid().v4(),
-        userId: userId,
-        cardName: _cardNameController.text,
-        lastFour: _lastFourController.text,
-      );
-
-      await ref.read(cardServiceProvider).addCard(card);
+      await ref.read(cardServiceProvider).updateCard(updatedCard);
 
       if (mounted) {
         ref.invalidate(cardsProvider);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Kart başarıyla eklendi!'), backgroundColor: Colors.green));
+        ).showSnackBar(const SnackBar(content: Text('Kart başarıyla güncellendi!'), backgroundColor: Colors.green));
         Navigator.pop(context);
       }
     } catch (e) {
@@ -119,7 +81,7 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Yeni Kart Ekle',
+                'Kartı Düzenle',
                 style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -150,7 +112,6 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
                   return null;
                 },
               ),
-
               const SizedBox(height: 32),
               FilledButton.icon(
                 onPressed: _isLoading ? null : _submit,
@@ -161,8 +122,8 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.add_rounded),
-                label: Text(_isLoading ? 'Ekleniyor...' : 'Ekle'),
+                    : const Icon(Icons.save_rounded),
+                label: Text(_isLoading ? 'Güncelleniyor...' : 'Güncelle'),
               ),
               const SizedBox(height: 32),
             ],

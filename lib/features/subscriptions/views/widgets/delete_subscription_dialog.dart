@@ -39,7 +39,7 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
             // 2. Title & Message
             Text(
               'Abonelik İşlemi',
-              style: theme.textTheme.headlineSmall?.copyWith(
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurface,
               ),
@@ -49,7 +49,11 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                  fontSize: 13,
+                ),
                 children: [
                   TextSpan(
                     text: '"${widget.subscriptionName}"',
@@ -148,7 +152,7 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
           color: bgColor,
           border: Border.all(color: borderColor, width: isSelected ? 2 : 1),

@@ -91,6 +91,47 @@ final class CardsProvider
 
 String _$cardsHash() => r'e658e9c28c2d79f42ee6694b191877573e2c40d9';
 
+@ProviderFor(allCards)
+final allCardsProvider = AllCardsProvider._();
+
+final class AllCardsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<PaymentCard>>,
+          List<PaymentCard>,
+          FutureOr<List<PaymentCard>>
+        >
+    with
+        $FutureModifier<List<PaymentCard>>,
+        $FutureProvider<List<PaymentCard>> {
+  AllCardsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allCardsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allCardsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<PaymentCard>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<PaymentCard>> create(Ref ref) {
+    return allCards(ref);
+  }
+}
+
+String _$allCardsHash() => r'5ff455a1df628f05dafdeffe8d4a5a8968d758ea';
+
 @ProviderFor(cardCount)
 final cardCountProvider = CardCountProvider._();
 

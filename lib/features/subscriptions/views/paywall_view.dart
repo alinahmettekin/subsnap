@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../../core/services/subscription_service.dart';
+import 'widgets/pricing_card.dart';
 
 class PaywallView extends ConsumerStatefulWidget {
   const PaywallView({super.key});
@@ -14,7 +15,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
   bool _isLoading = false;
   Offerings? _offerings;
   CustomerInfo? _customerInfo;
-  bool _showDebugInfo = true;
+  bool _showDebugInfo = false;
 
   @override
   void initState() {
@@ -129,9 +130,13 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                       style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
+                    const _BenefitItem(icon: Icons.all_inclusive_rounded, text: 'Sınırsız abonelik ekle ve yönet'),
+                    const _BenefitItem(
+                      icon: Icons.credit_card_rounded,
+                      text: 'Sınırsız ödeme kartı oluştur ve düzenle',
+                    ),
                     const _BenefitItem(icon: Icons.analytics_rounded, text: 'Detaylı harcama analizleri ve grafikler'),
                     const _BenefitItem(icon: Icons.notifications_active_rounded, text: 'Akıllı ödeme hatırlatıcıları'),
-                    const _BenefitItem(icon: Icons.all_inclusive_rounded, text: 'Sınırsız abonelik ekleme'),
                     const _BenefitItem(icon: Icons.cloud_done_rounded, text: 'Cihazlar arası anlık senkronizasyon'),
                     const SizedBox(height: 48),
                     if (_offerings != null && (_offerings!.current != null || _offerings!.all.isNotEmpty)) ...[
@@ -140,26 +145,11 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                               _offerings!.all['subsnappro']?.availablePackages ??
                               [])
                           .map(
-                            (pkg) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: OutlinedButton(
-                                onPressed: () => _purchasePackage(pkg),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.all(20),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(pkg.storeProduct.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    Text(pkg.storeProduct.priceString, style: theme.textTheme.titleMedium),
-                                    if (pkg.packageType == PackageType.monthly)
-                                      const Text(
-                                        '1 Ay Ücretsiz Deneme Dahil',
-                                        style: TextStyle(color: Colors.green, fontSize: 12),
-                                      ),
-                                  ],
-                                ),
-                              ),
+                            (pkg) => PricingCard(
+                              package: pkg,
+                              onTap: () => _purchasePackage(pkg),
+                              isSelected:
+                                  true, // For now, we highlight everything as it's likely a single choice or vertical list
                             ),
                           ),
                     ] else ...[

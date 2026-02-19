@@ -8,6 +8,20 @@ class ArchivedSubscriptionsView extends ConsumerWidget {
   const ArchivedSubscriptionsView({super.key});
 
   Future<void> _handleRestore(BuildContext context, WidgetRef ref, Subscription sub) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tekrar Aktifleştir?'),
+        content: Text('${sub.name} aboneliğini tekrar aktif aboneliklerinize eklemek istediğinize emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Aktifleştir')),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     try {
       await ref.read(subscriptionRepositoryProvider).restoreSubscription(sub.id);
       if (context.mounted) {

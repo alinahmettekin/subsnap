@@ -17,6 +17,11 @@ Future<List<PaymentCard>> cards(ref) async {
 }
 
 @Riverpod(keepAlive: true)
+Future<List<PaymentCard>> allCards(ref) async {
+  return ref.watch(cardServiceProvider).getCards(includeDeleted: true);
+}
+
+@Riverpod(keepAlive: true)
 Future<int> cardCount(Ref ref) async {
   final cards = await ref.watch(cardsProvider.future);
   return cards.length;

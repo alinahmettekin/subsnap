@@ -42,11 +42,11 @@ class _PaymentMethodBreakdownState extends ConsumerState<PaymentMethodBreakdown>
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
-    final cardsAsync = ref.watch(cardsProvider);
+    final cardsAsync = ref.watch(allCardsProvider);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
@@ -65,8 +65,12 @@ class _PaymentMethodBreakdownState extends ConsumerState<PaymentMethodBreakdown>
               children: [
                 Expanded(
                   child: Text(
-                    'Ödeme Yöntemi Analizi',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: onSurface),
+                    'Ödeme Yöntemleri',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: onSurface,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 Icon(

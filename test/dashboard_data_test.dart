@@ -78,7 +78,7 @@ class MockCardService implements CardService {
   int getCardsCallCount = 0;
 
   @override
-  Future<List<PaymentCard>> getCards() async {
+  Future<List<PaymentCard>> getCards({bool includeDeleted = false}) async {
     getCardsCallCount++;
     return [];
   }
@@ -89,6 +89,8 @@ class MockCardService implements CardService {
   Future<bool> canAddCard() async => true;
   @override
   Future<void> deleteCard(String id) async {}
+  @override
+  Future<void> updateCard(PaymentCard card) async {}
   @override
   Future<PaymentCard?> getCardById(String id) async => null;
 }

@@ -21,7 +21,7 @@ final class IsPremiumProvider
         argument: null,
         retry: null,
         name: r'isPremiumProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -40,7 +40,7 @@ final class IsPremiumProvider
   }
 }
 
-String _$isPremiumHash() => r'2ef83eace1fc30b34b8481aecc8b6b95bbea9372';
+String _$isPremiumHash() => r'e0995b74fe2443d05738a3666c03d2770d9c3cf3';
 
 @ProviderFor(PremiumStatus)
 final premiumStatusProvider = PremiumStatusProvider._();

@@ -13,6 +13,7 @@ abstract class Subscription with _$Subscription {
     required String currency,
     @JsonKey(name: 'category_id') String? categoryId,
     @JsonKey(name: 'billing_period') required String billingCycle,
+    @JsonKey(name: 'start_date') DateTime? startDate,
     @JsonKey(name: 'next_payment_date') required DateTime nextBillingDate,
     required String status,
     @JsonKey(name: 'created_at') DateTime? createdAt,

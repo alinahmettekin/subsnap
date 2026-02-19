@@ -95,7 +95,7 @@ class AnalyticsView extends ConsumerWidget {
                                   ] else ...[
                                     _PremiumBanner(),
                                   ],
-                                  const SizedBox(height: 32), // Bottom padding
+                                  const SizedBox(height: 120), // Bottom padding
                                 ],
                               ),
                             ),
@@ -145,7 +145,7 @@ class _PremiumBanner extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Premium ile Daha Fazlası',
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onPrimaryContainer,
             ),
@@ -154,7 +154,7 @@ class _PremiumBanner extends StatelessWidget {
           Text(
             'Detaylı harcama trendleri, kategori analizleri ve sınırsız ödeme takibi',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
             ),
           ),

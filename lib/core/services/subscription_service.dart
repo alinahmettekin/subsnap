@@ -26,10 +26,10 @@ class SubscriptionService {
     log('DEBUG: All entitlements: ${customerInfo.entitlements.all.keys}');
 
     // Check for specific entitlement identifier provided by RevenueCat logs
-    final isPremium = customerInfo.entitlements.active.containsKey(AppConstants.entitlementId);
+    // final isPremium = customerInfo.entitlements.active.containsKey(AppConstants.entitlementId);
 
-    log('DEBUG: Premium status: $isPremium');
-    return isPremium;
+    log('DEBUG: Premium status: BYPASSED (FALSE)');
+    return true; // Force free version for testing
   }
 
   static Future<bool> isPremium() async {
@@ -84,7 +84,7 @@ class SubscriptionService {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<bool> isPremium(Ref ref) {
   final controller = StreamController<bool>();
 

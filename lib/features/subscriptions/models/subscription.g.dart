@@ -15,6 +15,9 @@ _Subscription _$SubscriptionFromJson(Map<String, dynamic> json) =>
       currency: json['currency'] as String,
       categoryId: json['category_id'] as String?,
       billingCycle: json['billing_period'] as String,
+      startDate: json['start_date'] == null
+          ? null
+          : DateTime.parse(json['start_date'] as String),
       nextBillingDate: DateTime.parse(json['next_payment_date'] as String),
       status: json['status'] as String,
       createdAt: json['created_at'] == null
@@ -33,6 +36,7 @@ Map<String, dynamic> _$SubscriptionToJson(_Subscription instance) =>
       'currency': instance.currency,
       'category_id': instance.categoryId,
       'billing_period': instance.billingCycle,
+      'start_date': instance.startDate?.toIso8601String(),
       'next_payment_date': instance.nextBillingDate.toIso8601String(),
       'status': instance.status,
       'created_at': instance.createdAt?.toIso8601String(),

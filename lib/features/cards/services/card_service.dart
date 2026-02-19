@@ -6,11 +6,17 @@ class CardService {
 
   CardService(this._client);
 
-  Future<List<PaymentCard>> getCards() async {
+  Future<List<PaymentCard>> getCards({bool includeDeleted = false}) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
 
-    final response = await _client.from('cards').select().eq('user_id', userId).order('created_at', ascending: false);
+    var query = _client.from('cards').select().eq('user_id', userId);
+
+    if (!includeDeleted) {
+      query = query.eq('is_deleted', false);
+    }
+
+    final response = await query.order('created_at', ascending: false);
 
     return (response as List).map((json) => PaymentCard.fromJson(json)).toList();
   }
@@ -34,17 +40,16 @@ class CardService {
   }
 
   Future<void> addCard(PaymentCard card) async {
-    // Check if user can add more cards
-    final canAdd = await canAddCard();
-    if (!canAdd) {
-      throw Exception('Ücretsiz planda en fazla 2 kart ekleyebilirsiniz. Premium\'a geçin.');
-    }
-
+    // Rely on UI/Provider layer for permission checks.
     await _client.from('cards').insert(card.toJson());
   }
 
   Future<void> deleteCard(String id) async {
-    await _client.from('cards').delete().eq('id', id);
+    await _client.from('cards').update({'is_deleted': true}).eq('id', id);
+  }
+
+  Future<void> updateCard(PaymentCard card) async {
+    await _client.from('cards').update({'card_name': card.cardName, 'last_four': card.lastFour}).eq('id', card.id);
   }
 
   Future<PaymentCard?> getCardById(String id) async {
