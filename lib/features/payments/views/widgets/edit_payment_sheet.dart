@@ -134,12 +134,19 @@ class _EditPaymentSheetState extends ConsumerState<EditPaymentSheet> {
                   ),
                   items: [
                     const DropdownMenuItem<String?>(value: null, child: Text('Kart Seçilmedi')),
-                    ...cards.map(
-                      (card) => DropdownMenuItem<String?>(
-                        value: card.id,
-                        child: Text('${card.cardName} (**** ${card.lastFour})'),
-                      ),
-                    ),
+                    ...cards
+                        .where((c) => !c.isDeleted || c.id == widget.payment.cardId)
+                        .map(
+                          (card) => DropdownMenuItem<String?>(
+                            value: card.id,
+                            child: Text(
+                              '${card.cardName} (**** ${card.lastFour})${card.isDeleted ? ' (Silinmiş)' : ''}',
+                              style: TextStyle(
+                                color: card.isDeleted ? theme.colorScheme.error : theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
                   ],
                   onChanged: (val) => setState(() => _selectedCardId = val),
                 ),

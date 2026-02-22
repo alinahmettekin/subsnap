@@ -10,6 +10,7 @@ import 'add_payment_view.dart';
 import '../../subscriptions/views/paywall_view.dart';
 import 'package:flutter/services.dart';
 import 'widgets/edit_payment_sheet.dart';
+import '../../../core/widgets/confirm_sheet.dart';
 
 class PaymentsView extends ConsumerWidget {
   const PaymentsView({super.key});
@@ -197,23 +198,12 @@ class _PaymentsList extends ConsumerWidget {
                         key: Key(payment.id),
                         direction: DismissDirection.endToStart,
                         confirmDismiss: (direction) async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Ödeme Kaydını Sil'),
-                              content: Text('Bu ödeme kaydını silmek istediğinize emin misiniz?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(false),
-                                  child: const Text('İptal'),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.of(context).pop(true),
-                                  style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-                                  child: const Text('Sil'),
-                                ),
-                              ],
-                            ),
+                          final confirm = await ConfirmSheet.show(
+                            context,
+                            title: 'Ödeme Kaydını Sil',
+                            message: 'Bu ödeme kaydını silmek istediğinize emin misiniz?',
+                            confirmLabel: 'Sil',
+                            isDestructive: true,
                           );
 
                           if (confirm == true) {

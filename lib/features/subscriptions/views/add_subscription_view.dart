@@ -326,16 +326,16 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                     value: hasSelection ? selectedCat['name'] as String : 'Diğer',
                     icon: Icons.category_outlined,
                     onTap: () => _showCategorySheet(cats),
-                    prefixIcon: hasSelection
-                        ? Image.asset(
-                            'assets/categories/${selectedCat['icon_name']}.png',
-                            width: 20,
-                            height: 20,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Image.asset('assets/categories/other.png', width: 20, height: 20),
-                          )
-                        : null,
+                    prefixIcon: Image.asset(
+                      hasSelection && selectedCat['icon_name'] != null
+                          ? 'assets/categories/${selectedCat['icon_name']}.png'
+                          : 'assets/categories/other.png',
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Image.asset('assets/categories/other.png', width: 20, height: 20),
+                    ),
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
@@ -773,11 +773,12 @@ class _ServiceSelectionSheetState extends State<_ServiceSelectionSheet> {
     // Internal mapping for sorting priority
     final priority = {
       'Mobil Operatörler': 0,
-      'İnternet Servis Sağlayıcıları': 1,
-      'Araçlar': 2,
-      'Dijital Platformlar': 3,
-      'Yapay Zeka': 4,
-      'Yazılım': 5,
+      'Fatura': 1,
+      'İnternet Servis Sağlayıcıları': 2,
+      'Araçlar': 3,
+      'Dijital Platformlar': 4,
+      'Yapay Zeka': 5,
+      'Yazılım': 6,
     };
 
     // Sort categories based on priority, others at the end
@@ -803,7 +804,7 @@ class _ServiceSelectionSheetState extends State<_ServiceSelectionSheet> {
     // Add uncategorized if they exist
     final otherServices = _filteredServices.where((s) => s.categoryId == null).toList();
     if (otherServices.isNotEmpty) {
-      groups['Diğer / Popüler'] = otherServices;
+      groups['Diğer Servisler'] = otherServices;
     }
 
     return groups;

@@ -3,21 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/subscription_provider.dart';
 import '../models/subscription.dart';
 import 'widgets/subscription_icon.dart';
+import '../../../core/widgets/confirm_sheet.dart';
 
 class ArchivedSubscriptionsView extends ConsumerWidget {
   const ArchivedSubscriptionsView({super.key});
 
   Future<void> _handleRestore(BuildContext context, WidgetRef ref, Subscription sub) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tekrar Aktifleştir?'),
-        content: Text('${sub.name} aboneliğini tekrar aktif aboneliklerinize eklemek istediğinize emin misiniz?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Aktifleştir')),
-        ],
-      ),
+    final confirmed = await ConfirmSheet.show(
+      context,
+      title: 'Tekrar Aktifleştir?',
+      message: '${sub.name} aboneliğini tekrar aktif aboneliklerinize eklemek istediğinize emin misiniz?',
+      confirmLabel: 'Aktifleştir',
     );
 
     if (confirmed != true) return;
@@ -40,22 +36,12 @@ class ArchivedSubscriptionsView extends ConsumerWidget {
 
   Future<void> _handleDeleteForever(BuildContext context, WidgetRef ref, Subscription sub) async {
     // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kalıcı Olarak Sil?'),
-        content: const Text(
-          'Bu işlem aboneliği ve TÜM GEÇMİŞ ÖDEMELERİ kalıcı olarak silecektir. Bu işlem geri alınamaz.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Vazgeç')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil'),
-          ),
-        ],
-      ),
+    final confirm = await ConfirmSheet.show(
+      context,
+      title: 'Kalıcı Olarak Sil?',
+      message: 'Bu işlem aboneliği ve TÜM GEÇMİŞ ÖDEMELERİ kalıcı olarak silecektir. Bu işlem geri alınamaz.',
+      confirmLabel: 'Sil',
+      isDestructive: true,
     );
 
     if (confirm != true || !context.mounted) return;

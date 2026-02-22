@@ -9,6 +9,7 @@ import '../../cards/views/cards_list_view.dart';
 import '../../cards/providers/card_provider.dart';
 import '../../support/views/help_and_support_view.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/confirm_sheet.dart';
 
 class SettingsView extends ConsumerStatefulWidget {
   const SettingsView({super.key});
@@ -28,71 +29,135 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     }
   }
 
-  void _showDeleteAccountDialog(String? userEmail) {
+  void _showDeleteAccountSheet(String? userEmail) {
     if (userEmail == null) return;
 
     final emailController = TextEditingController();
+    final theme = Theme.of(context);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
+        builder: (sheetContext, setSheetState) {
           final isMatch = emailController.text.trim() == userEmail;
 
-          return AlertDialog(
-            title: const Text('Hesabımı Sil', style: TextStyle(color: Colors.red)),
-            content: Column(
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 24,
+              top: 12,
+              left: 24,
+              right: 24,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm abonelikleriniz, ödemeleriniz ve verileriniz kalıcı olarak silinecektir.',
+                // Drag Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                const SizedBox(height: 24),
+
+                // Icon Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: theme.colorScheme.error.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(Icons.person_remove_rounded, color: theme.colorScheme.error, size: 32),
+                ),
+                const SizedBox(height: 20),
+
+                Text(
+                  'Hesabımı Sil',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz kalıcı olarak silinecektir.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 24),
+
+                Text(
                   'Onaylamak için lütfen e-posta adresinizi yazınız:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: emailController,
+                  autofocus: true,
                   decoration: InputDecoration(
                     hintText: userEmail,
-                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                     errorText: emailController.text.isNotEmpty && !isMatch ? 'E-posta eşleşmiyor' : null,
                   ),
-                  onChanged: (_) => setDialogState(() {}),
+                  onChanged: (_) => setSheetState(() {}),
+                  // Fix for keyboard visibility in bottom sheet
+                  onFieldSubmitted: (_) => setSheetState(() {}),
+                ),
+                const SizedBox(height: 32),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text('Vazgeç', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: isMatch
+                            ? () async {
+                                final navigator = Navigator.of(context);
+                                final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                                try {
+                                  // Hemen sheet'i kapat
+                                  navigator.pop();
+
+                                  // Hesabı sil
+                                  await ref.read(authServiceProvider).deleteAccount();
+                                } catch (e) {
+                                  scaffoldMessenger.showSnackBar(
+                                    SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
+                            : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          disabledBackgroundColor: theme.colorScheme.error.withOpacity(0.3),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text('Hesabımı Sil', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('İptal')),
-              FilledButton(
-                onPressed: isMatch
-                    ? () async {
-                        final navigator = Navigator.of(context);
-                        final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-                        try {
-                          // Hemen diyaloğu kapat
-                          navigator.pop();
-
-                          // Hesabı sil
-                          await ref.read(authServiceProvider).deleteAccount();
-                        } catch (e) {
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  disabledBackgroundColor: Colors.red.withOpacity(0.3),
-                ),
-                child: const Text('Hesabımı Sil'),
-              ),
-            ],
           );
         },
       ),
@@ -207,9 +272,19 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           const SizedBox(height: 48),
           OutlinedButton.icon(
             onPressed: () async {
-              await authService.signOut();
-              if (mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+              final confirmed = await ConfirmSheet.show(
+                context,
+                title: 'Çıkış Yap',
+                message: 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?',
+                confirmLabel: 'Çıkış Yap',
+                isDestructive: true,
+              );
+
+              if (confirmed == true && mounted) {
+                await ref.read(authServiceProvider).signOut();
+                if (mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
               }
             },
             icon: const Icon(Icons.logout_rounded),
@@ -223,7 +298,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           ),
           const SizedBox(height: 16),
           TextButton.icon(
-            onPressed: () => _showDeleteAccountDialog(user?.email),
+            onPressed: () => _showDeleteAccountSheet(user?.email),
             icon: const Icon(Icons.delete_forever_rounded, size: 20),
             label: const Text('Hesabımı Sil'),
             style: TextButton.styleFrom(

@@ -17,8 +17,10 @@ class DashboardView extends ConsumerWidget {
     // Check if widget is mounted before showing dialog
     if (!context.mounted) return;
 
-    final result = await showDialog<DeleteOption>(
+    final result = await showModalBottomSheet<DeleteOption>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => DeleteSubscriptionDialog(subscriptionName: subscription.name),
     );
 
@@ -106,7 +108,7 @@ class DashboardView extends ConsumerWidget {
                         if (isPremium) return const SizedBox.shrink();
 
                         final subscriptionCount = subs.length;
-                        const maxFree = 3;
+                        const maxFree = 6;
                         final progress = subscriptionCount / maxFree;
 
                         return Padding(

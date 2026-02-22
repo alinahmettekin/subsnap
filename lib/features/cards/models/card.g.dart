@@ -14,6 +14,7 @@ _PaymentCard _$PaymentCardFromJson(Map<String, dynamic> json) => _PaymentCard(
   createdAt: json['created_at'] == null
       ? null
       : DateTime.parse(json['created_at'] as String),
+  isDeleted: json['is_deleted'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$PaymentCardToJson(_PaymentCard instance) =>
@@ -23,4 +24,5 @@ Map<String, dynamic> _$PaymentCardToJson(_PaymentCard instance) =>
       'card_name': instance.cardName,
       'last_four': instance.lastFour,
       'created_at': instance.createdAt?.toIso8601String(),
+      'is_deleted': instance.isDeleted,
     };

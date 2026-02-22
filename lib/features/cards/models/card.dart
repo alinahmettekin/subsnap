@@ -12,6 +12,7 @@ abstract class PaymentCard with _$PaymentCard {
     @JsonKey(name: 'card_name') required String cardName,
     @JsonKey(name: 'last_four') required String lastFour,
     @JsonKey(name: 'created_at') DateTime? createdAt,
+    @JsonKey(name: 'is_deleted') @Default(false) bool isDeleted,
   }) = _PaymentCard;
 
   factory PaymentCard.fromJson(Map<String, dynamic> json) => _$PaymentCardFromJson(json);

@@ -329,8 +329,8 @@ CREATE TRIGGER on_subscription_created_generate_history
 -- ==========================================
 INSERT INTO categories (name, icon_name) VALUES
 ('Dijital Platformlar', 'film'),
-('Araçlar', 'cloud'),
-('Finans', 'finance'),
+('Araçlar', 'tools'),
+('Finans', 'attach_money'),
 ('İş & Kariyer', 'work'),
 ('Yazılım', 'code'),
 ('Eğitim', 'school'),
@@ -339,7 +339,8 @@ INSERT INTO categories (name, icon_name) VALUES
 ('Alışveriş', 'shopping_bag'),
 ('Mobil Operatörler', 'phone'),
 ('İnternet Servis Sağlayıcıları', 'wifi'),
-('Vergi & Kamu', 'description'), -- NEW CATEGORY
+('Vergi & Kamu', 'legal'),
+('Faturalar', 'bill'),
 ('Diğer', 'other')
 ON CONFLICT (name) DO UPDATE SET 
     icon_name = EXCLUDED.icon_name;
@@ -347,7 +348,7 @@ ON CONFLICT (name) DO UPDATE SET
 DO $$
 DECLARE
     cat_streaming uuid; cat_utility uuid; cat_mobile uuid; cat_isp uuid; 
-    cat_software uuid; cat_design uuid; cat_ai uuid; cat_gov uuid;
+    cat_software uuid; cat_design uuid; cat_ai uuid; cat_gov uuid; cat_bills uuid;
 BEGIN
     SELECT id INTO cat_streaming FROM categories WHERE name = 'Dijital Platformlar';
     SELECT id INTO cat_utility FROM categories WHERE name = 'Araçlar';
@@ -357,6 +358,7 @@ BEGIN
     SELECT id INTO cat_design FROM categories WHERE name = 'Tasarım';
     SELECT id INTO cat_ai FROM categories WHERE name = 'Yapay Zeka';
     SELECT id INTO cat_gov FROM categories WHERE name = 'Vergi & Kamu';
+    SELECT id INTO cat_bills FROM categories WHERE name = 'Fatura';
 
     INSERT INTO services (name, icon_name, default_billing_cycle, category_id) VALUES
     ('Netflix', 'netflix', 'monthly', cat_streaming),
@@ -381,8 +383,11 @@ BEGIN
     ('Figma', 'figma', 'monthly', cat_design),
     ('ChatGPT', 'chatgpt', 'monthly', cat_ai),
     ('Claude', 'claude', 'monthly', cat_ai),
-    ('Motorlu Taşıtlar Vergisi', 'car', '6_months', (SELECT id FROM categories WHERE name = 'Vergi & Kamu')),
-    ('Digiturk', 'digiturk', 'monthly', cat_streaming)
+    ('Motorlu Taşıtlar Vergisi', 'car', '6_months', cat_gov),
+    ('Elektrik', 'electric', 'monthly', cat_bills),
+    ('Su', 'water', 'monthly', cat_bills),
+    ('Doğalgaz', 'gas', 'monthly', cat_bills),
+    ('Digiturk', 'digiturk', 'yearly', cat_streaming)
     ON CONFLICT (name) DO UPDATE SET 
         category_id = EXCLUDED.category_id, 
         default_billing_cycle = EXCLUDED.default_billing_cycle,

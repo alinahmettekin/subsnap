@@ -81,9 +81,17 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
     } catch (e) {
       debugPrint('Purchase error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Satın alma başarısız: $e'), backgroundColor: Colors.red));
+        final errorStr = e.toString();
+        final isCancelled =
+            errorStr.contains('userCancelled: true') ||
+            errorStr.contains('PurchaseCancelledError') ||
+            errorStr.contains('USER_CANCELED');
+
+        if (!isCancelled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Bir sorun oluştu. Lütfen tekrar deneyin.'), backgroundColor: Colors.red),
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -194,7 +202,10 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                                 debugPrint('Restore error: $e');
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Geri yükleme hatası: $e'), backgroundColor: Colors.red),
+                                    const SnackBar(
+                                      content: Text('Geri yükleme sırasında bir sorun oluştu.'),
+                                      backgroundColor: Colors.red,
+                                    ),
                                   );
                                 }
                               } finally {

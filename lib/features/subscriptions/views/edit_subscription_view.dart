@@ -99,7 +99,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
     final currentSubscriptions = ref.read(subscriptionsProvider).asData?.value ?? [];
 
-    if (!isPremium && currentSubscriptions.length > 6) {
+    if (!isPremium && currentSubscriptions.length >= 6) {
       if (mounted) {
         showDialog(
           context: context,
@@ -185,7 +185,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final categoriesAsync = ref.watch(categoriesProvider);
-    final cardsAsync = ref.watch(cardsProvider);
+    final cardsAsync = ref.watch(allCardsProvider);
 
     return Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
@@ -272,7 +272,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                   return _buildSelectionField(
                     label: 'Ödeme Yöntemi',
                     value: selectedCard != null
-                        ? '${selectedCard.cardName} (**** ${selectedCard.lastFour})'
+                        ? '${selectedCard.cardName} (**** ${selectedCard.lastFour})${selectedCard.isDeleted ? ' (Silinmiş)' : ''}'
                         : 'Seçilmedi',
                     prefixIcon: Image.asset(
                       'assets/services/credit_card.png',
@@ -424,9 +424,9 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     _showModernSheet(
       title: 'Ödeme Yöntemi Seç',
       children: [
-        ...cards.map((c) {
+        ...cards.where((c) => !c.isDeleted || c.id == _selectedCardId).map((c) {
           return _buildSheetItem(
-            title: '${c.cardName} (**** ${c.lastFour})',
+            title: '${c.cardName} (**** ${c.lastFour})${c.isDeleted ? ' (Silinmiş)' : ''}',
             isSelected: _selectedCardId == c.id,
             prefix: Image.asset(
               'assets/services/credit_card.png',

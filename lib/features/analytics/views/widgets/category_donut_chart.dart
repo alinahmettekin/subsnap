@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:subsnap/features/subscriptions/models/subscription.dart';
 import 'package:subsnap/features/subscriptions/providers/subscription_provider.dart';
+import 'package:subsnap/features/subscriptions/views/widgets/subscription_icon.dart';
 
 class CategoryDonutChart extends ConsumerStatefulWidget {
   final List<Subscription> subscriptions;
@@ -17,6 +18,21 @@ class CategoryDonutChart extends ConsumerStatefulWidget {
 class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
   bool _isMonthly = true; // State to toggle between Monthly/Yearly
   bool _isExpanded = true;
+  String? _expandedCategoryId;
+  int _touchedIndex = -1;
+
+  final List<Color> _chartColors = [
+    const Color(0xFF6366F1), // Indigo
+    const Color(0xFFEC4899), // Pink
+    const Color(0xFF10B981), // Emerald
+    const Color(0xFFF59E0B), // Amber
+    const Color(0xFF3B82F6), // Blue
+    const Color(0xFF8B5CF6), // Violet
+    const Color(0xFFF43F5E), // Rose
+    const Color(0xFF06B6D4), // Cyan
+    const Color(0xFF84CC16), // Lime
+    const Color(0xFFEF4444), // Red
+  ];
 
   @override
   void initState() {
@@ -108,20 +124,24 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                 const SizedBox(height: 24),
                 categoriesAsync.when(
                   data: (categories) {
-                    final Map<String, double> categoryCosts = {};
-                    final Map<String, Color> categoryColors = {};
+                    final Map<String, List<Subscription>> categorySubscriptions = {};
                     final Map<String, String> categoryNames = {};
-                    final Map<String, IconData> categoryIcons = {};
+                    final Map<String, Color> categoryColors = {};
+                    final Map<String, String> categoryIconPaths = {};
 
-                    // Pre-process category metadata
-                    for (var cat in categories) {
+                    // Pre-process category metadata with automatic color distribution
+                    for (int i = 0; i < categories.length; i++) {
+                      final cat = categories[i];
                       final id = cat['id'] as String;
                       categoryNames[id] = cat['name'] as String;
                       final colorHex = cat['color'] as String?;
+
+                      // Use DB color if exists, otherwise cycle through _chartColors
                       categoryColors[id] = colorHex != null
                           ? Color(int.parse(colorHex.replaceFirst('#', '0xFF')))
-                          : theme.colorScheme.primary;
-                      categoryIcons[id] = _getCategoryIcon(cat['name'] as String);
+                          : _chartColors[i % _chartColors.length];
+
+                      categoryIconPaths[id] = _getCategoryIconPath(cat['name'] as String);
                     }
 
                     double totalCost = 0;
@@ -129,18 +149,15 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                     // Calculate costs based on _isMonthly
                     for (var sub in widget.subscriptions) {
                       final catId = sub.categoryId ?? 'unknown';
+                      categorySubscriptions.putIfAbsent(catId, () => []).add(sub);
+                      totalCost += _calculateCost(sub);
+                    }
 
-                      double cost = 0;
-                      if (_isMonthly) {
-                        // Monthly View
-                        cost = sub.billingCycle == 'monthly' ? sub.price : sub.price / 12;
-                      } else {
-                        // Yearly View
-                        cost = sub.billingCycle == 'yearly' ? sub.price : sub.price * 12;
-                      }
-
-                      categoryCosts[catId] = (categoryCosts[catId] ?? 0) + cost;
-                      totalCost += cost;
+                    // Special handling for 'unknown' category if it exists
+                    if (categorySubscriptions.containsKey('unknown')) {
+                      categoryNames['unknown'] = 'Diğer';
+                      categoryColors['unknown'] = theme.colorScheme.outline;
+                      categoryIconPaths['unknown'] = 'assets/categories/other.png';
                     }
 
                     if (totalCost == 0) {
@@ -153,21 +170,45 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                     }
 
                     // Filter out zero categories and sort by cost
-                    final sortedEntries = categoryCosts.entries.where((e) => e.value > 0).toList()
-                      ..sort((a, b) => b.value.compareTo(a.value));
+                    final sortedEntries =
+                        categorySubscriptions.entries.where((e) => _calculateCategoryCost(e.value) > 0).toList()
+                          ..sort((a, b) => _calculateCategoryCost(b.value).compareTo(_calculateCategoryCost(a.value)));
 
                     // Pie Chart Sections
-                    final sections = sortedEntries.map((entry) {
+                    final sections = List.generate(sortedEntries.length, (i) {
+                      final entry = sortedEntries[i];
                       final catId = entry.key;
-                      final value = entry.value;
+                      final value = _calculateCategoryCost(entry.value);
+                      final isTouched = i == _touchedIndex;
+
                       return PieChartSectionData(
                         color: categoryColors[catId] ?? theme.colorScheme.primary,
                         value: value,
                         title: '',
-                        radius: 20, // Slightly thicker ring
+                        radius: isTouched ? 28 : 20,
                         showTitle: false,
+                        badgeWidget: isTouched
+                            ? Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surface,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: categoryColors[catId] ?? theme.colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                                ),
+                                child: Image.asset(
+                                  categoryIconPaths[catId] ?? 'assets/categories/other.png',
+                                  width: 16,
+                                  height: 16,
+                                ),
+                              )
+                            : null,
+                        badgePositionPercentageOffset: 1.1,
                       );
-                    }).toList();
+                    });
 
                     return Column(
                       children: [
@@ -179,6 +220,19 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                             children: [
                               PieChart(
                                 PieChartData(
+                                  pieTouchData: PieTouchData(
+                                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                                      setState(() {
+                                        if (!event.isInterestedForInteractions ||
+                                            pieTouchResponse == null ||
+                                            pieTouchResponse.touchedSection == null) {
+                                          _touchedIndex = -1;
+                                          return;
+                                        }
+                                        _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                                      });
+                                    },
+                                  ),
                                   sections: sections,
                                   centerSpaceRadius: 55,
                                   sectionsSpace: 4,
@@ -188,18 +242,36 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                               Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    '₺${totalCost.toStringAsFixed(0)}',
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: onSurface,
-                                      letterSpacing: -1,
+                                  if (_touchedIndex == -1) ...[
+                                    Text(
+                                      '₺${totalCost.toStringAsFixed(0)}',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: onSurface,
+                                        letterSpacing: -1,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    _isMonthly ? 'Aylık Toplam' : 'Yıllık Toplam',
-                                    style: theme.textTheme.bodySmall?.copyWith(color: onSurfaceVariant),
-                                  ),
+                                    Text(
+                                      _isMonthly ? 'Aylık Toplam' : 'Yıllık Toplam',
+                                      style: theme.textTheme.bodySmall?.copyWith(color: onSurfaceVariant),
+                                    ),
+                                  ] else ...[
+                                    Text(
+                                      categoryNames[sortedEntries[_touchedIndex].key] ?? '',
+                                      style: theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: onSurface,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    Text(
+                                      '%${((_calculateCategoryCost(sortedEntries[_touchedIndex].value) / totalCost) * 100).toStringAsFixed(1)}',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: categoryColors[sortedEntries[_touchedIndex].key],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -211,57 +283,103 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                         Column(
                           children: sortedEntries.map((entry) {
                             final catId = entry.key;
-                            final cost = entry.value;
+                            final subs = entry.value;
+                            final categoryCost = _calculateCategoryCost(subs);
                             final name = categoryNames[catId] ?? 'Diğer';
                             final color = categoryColors[catId] ?? theme.colorScheme.primary;
-                            final icon = categoryIcons[catId] ?? Icons.category_rounded;
-                            final percentage = (cost / totalCost) * 100;
+                            final iconPath = categoryIconPaths[catId] ?? 'assets/categories/other.png';
+                            final percentage = (categoryCost / totalCost) * 100;
+                            final isExpanded = _expandedCategoryId == catId;
 
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Row(
-                                children: [
-                                  // Icon Box
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(icon, color: color, size: 20),
-                                  ),
-                                  const SizedBox(width: 16),
-
-                                  // Name & Percentage
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                            return Column(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _expandedCategoryId = isExpanded ? null : catId;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          name,
-                                          style: theme.textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: onSurface,
+                                        // Icon Box
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.surfaceContainerHigh,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Image.asset(iconPath, width: 24, height: 24),
+                                        ),
+                                        const SizedBox(width: 16),
+
+                                        // Name & Percentage
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                name,
+                                                style: theme.textTheme.bodyMedium?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: onSurface,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              // Progress Bar background
+                                              Stack(
+                                                children: [
+                                                  Container(
+                                                    height: 4,
+                                                    width: 100,
+                                                    decoration: BoxDecoration(
+                                                      color: theme.colorScheme.surfaceContainerHighest,
+                                                      borderRadius: BorderRadius.circular(2),
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    height: 4,
+                                                    width: percentage.clamp(0, 100).toDouble(),
+                                                    decoration: BoxDecoration(
+                                                      color: color,
+                                                      borderRadius: BorderRadius.circular(2),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        // Progress Bar background
-                                        Stack(
+
+                                        // Cost & Percentage Text
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
-                                            Container(
-                                              height: 4,
-                                              width: 100,
-                                              decoration: BoxDecoration(
-                                                color: theme.colorScheme.surfaceContainerHighest,
-                                                borderRadius: BorderRadius.circular(2),
-                                              ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  '₺${categoryCost.toStringAsFixed(0)}',
+                                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: onSurface,
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  isExpanded
+                                                      ? Icons.keyboard_arrow_up_rounded
+                                                      : Icons.keyboard_arrow_down_rounded,
+                                                  size: 16,
+                                                  color: onSurfaceVariant,
+                                                ),
+                                              ],
                                             ),
-                                            Container(
-                                              height: 4,
-                                              width: percentage.clamp(0, 100).toDouble(), // Simple width proportional
-                                              decoration: BoxDecoration(
-                                                color: color,
-                                                borderRadius: BorderRadius.circular(2),
+                                            Text(
+                                              '%${percentage.toStringAsFixed(1)}',
+                                              style: theme.textTheme.bodySmall?.copyWith(
+                                                color: onSurfaceVariant,
+                                                fontSize: 11,
                                               ),
                                             ),
                                           ],
@@ -269,29 +387,57 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
                                       ],
                                     ),
                                   ),
-
-                                  // Cost & Percentage Text
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        '₺${cost.toStringAsFixed(0)}',
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: onSurface,
-                                        ),
-                                      ),
-                                      Text(
-                                        '%${percentage.toStringAsFixed(1)}',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: onSurfaceVariant,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
+                                ),
+                                // Subscriptions list if expanded
+                                if (isExpanded)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 52, top: 4, bottom: 12),
+                                    child: Column(
+                                      children: subs.map((sub) {
+                                        final subCost = _calculateCost(sub);
+                                        final subPercentage = (subCost / categoryCost) * 100;
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          child: Row(
+                                            children: [
+                                              SubscriptionIcon(subscription: sub, size: 28),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  sub.name,
+                                                  style: theme.textTheme.bodySmall?.copyWith(
+                                                    color: onSurface.withValues(alpha: 0.8),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    '₺${subCost.toStringAsFixed(0)}',
+                                                    style: theme.textTheme.labelSmall?.copyWith(
+                                                      fontWeight: FontWeight.bold,
+                                                      color: onSurface,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    '%${subPercentage.toStringAsFixed(0)}',
+                                                    style: theme.textTheme.labelSmall?.copyWith(
+                                                      color: onSurfaceVariant,
+                                                      fontSize: 10,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
-                                ],
-                              ),
+                                if (!isExpanded) const SizedBox(height: 8),
+                              ],
                             );
                           }).toList(),
                         ),
@@ -338,39 +484,47 @@ class _CategoryDonutChartState extends ConsumerState<CategoryDonutChart> {
     );
   }
 
-  IconData _getCategoryIcon(String name) {
-    // Simplified icon mapping, can be expanded or use IconHelper
+  double _calculateCost(Subscription sub) {
+    if (_isMonthly) {
+      return sub.billingCycle == 'monthly' ? sub.price : sub.price / 12;
+    } else {
+      return sub.billingCycle == 'yearly' ? sub.price : sub.price * 12;
+    }
+  }
+
+  double _calculateCategoryCost(List<Subscription> subs) {
+    return subs.fold(0.0, (sum, sub) => sum + _calculateCost(sub));
+  }
+
+  String _getCategoryIconPath(String name) {
     switch (name.toLowerCase()) {
       case 'yazılım':
-        return Icons.code_rounded;
+        return 'assets/categories/code.png';
       case 'eğlence':
-        return Icons.movie_rounded;
       case 'dijital platformlar':
-        return Icons.movie_filter_rounded;
-      case 'araçlar':
-        return Icons.cloud_rounded;
-      case 'eğitim':
-        return Icons.school_rounded;
       case 'müzik':
-        return Icons.music_note_rounded;
+        return 'assets/categories/film.png';
+      case 'araçlar':
+        return 'assets/categories/tools.png';
+      case 'eğitim':
+        return 'assets/categories/school.png';
       case 'finans':
-        return Icons.attach_money_rounded;
-      case 'finansk': // Typo specific fix if needed, assuming the previous switch had typos or specific cases.
-        return Icons.attach_money_rounded;
+      case 'finansk':
+        return 'assets/categories/attach_money.png';
       case 'iş & kariyer':
-        return Icons.work_rounded;
+        return 'assets/categories/work.png';
       case 'tasarım':
-        return Icons.palette_rounded;
+        return 'assets/categories/palette.png';
       case 'yapay zeka':
-        return Icons.psychology_rounded;
+        return 'assets/categories/ai.png';
       case 'alışveriş':
-        return Icons.shopping_bag_rounded;
+        return 'assets/categories/shopping_bag.png';
       case 'mobil operatörler':
-        return Icons.phone_android_rounded;
+        return 'assets/categories/phone.png';
       case 'internet servis sağlayıcıları':
-        return Icons.wifi_rounded;
+        return 'assets/categories/wifi.png';
       default:
-        return Icons.category_rounded;
+        return 'assets/categories/other.png';
     }
   }
 }

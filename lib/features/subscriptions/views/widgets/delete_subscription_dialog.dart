@@ -19,116 +19,121 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
     final theme = Theme.of(context);
     final isDestructive = _selectedOption == DeleteOption.subscriptionWithPayments;
 
-    return Dialog(
-      backgroundColor: theme.colorScheme.surface,
-      surfaceTintColor: Colors.transparent, // Remove default tint for cleaner look
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 1. Header Icon
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: theme.colorScheme.error.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: Icon(Icons.delete_rounded, color: theme.colorScheme.error, size: 32),
+    return Container(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 24, top: 12, left: 24, right: 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 0. Drag Handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
             ),
-            const SizedBox(height: 20),
+          ),
+          const SizedBox(height: 24),
 
-            // 2. Title & Message
-            Text(
-              'Abonelik İşlemi',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+          // 1. Header Icon
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: theme.colorScheme.error.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: Icon(Icons.delete_rounded, color: theme.colorScheme.error, size: 32),
+          ),
+          const SizedBox(height: 20),
+
+          // 2. Title & Message
+          Text(
+            'Abonelik İşlemi',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+                fontSize: 13,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            RichText(
-              textAlign: TextAlign.center,
-              text: TextSpan(
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                  fontSize: 13,
-                ),
-                children: [
-                  TextSpan(
-                    text: '"${widget.subscriptionName}"',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                  ),
-                  const TextSpan(text: ' aboneliği ile ne yapmak istersiniz?'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // 3. Selection Cards
-            _buildOptionCard(
-              theme: theme,
-              option: DeleteOption.subscriptionOnly,
-              title: 'Aboneliği İptal Et',
-              subtitle: 'Abonelik askıya alınır, ödeme geçmişi korunur.',
-              icon: Icons.inventory_2_outlined,
-              isSelected: _selectedOption == DeleteOption.subscriptionOnly,
-            ),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              theme: theme,
-              option: DeleteOption.subscriptionWithPayments,
-              title: 'Tamamen Kaldır',
-              subtitle: 'Abonelik ve tüm geçmiş ödemeler kalıcı olarak silinir.',
-              icon: Icons.delete_forever_outlined,
-              isSelected: _selectedOption == DeleteOption.subscriptionWithPayments,
-              isDestructiveOption: true,
-            ),
-
-            const SizedBox(height: 32),
-
-            // 4. Action Buttons
-            Row(
               children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      foregroundColor: theme.colorScheme.onSurfaceVariant,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: const Text('Vazgeç', style: TextStyle(fontWeight: FontWeight.w600)),
-                  ),
+                TextSpan(
+                  text: '"${widget.subscriptionName}"',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(context, _selectedOption);
-                    },
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: isDestructive
-                          ? theme.colorScheme.error
-                          : theme.colorScheme.surfaceContainerHighest,
-                      foregroundColor: isDestructive ? theme.colorScheme.onError : theme.colorScheme.onSurface,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: Text(
-                      isDestructive ? 'Tamamen Sil' : 'İptal Et',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isDestructive ? theme.colorScheme.onError : theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ),
+                const TextSpan(text: ' aboneliği ile ne yapmak istersiniz?'),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 28),
+
+          // 3. Selection Cards
+          _buildOptionCard(
+            theme: theme,
+            option: DeleteOption.subscriptionOnly,
+            title: 'Aboneliği İptal Et',
+            subtitle: 'Abonelik arşive alınır, ödeme geçmişi korunur.',
+            icon: Icons.inventory_2_outlined,
+            isSelected: _selectedOption == DeleteOption.subscriptionOnly,
+          ),
+          const SizedBox(height: 12),
+          _buildOptionCard(
+            theme: theme,
+            option: DeleteOption.subscriptionWithPayments,
+            title: 'Tamamen Kaldır',
+            subtitle: 'Abonelik ve tüm geçmiş ödemeler kalıcı olarak silinir.',
+            icon: Icons.delete_forever_outlined,
+            isSelected: _selectedOption == DeleteOption.subscriptionWithPayments,
+            isDestructiveOption: true,
+          ),
+
+          const SizedBox(height: 32),
+
+          // 4. Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    foregroundColor: theme.colorScheme.onSurfaceVariant,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Vazgeç', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(context, _selectedOption);
+                  },
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: isDestructive ? theme.colorScheme.error : theme.colorScheme.primary,
+                    foregroundColor: isDestructive ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text(
+                    isDestructive ? 'Tamamen Sil' : 'İptal Et/Arşivle',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
