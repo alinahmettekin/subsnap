@@ -7,11 +7,10 @@ import '../models/subscription.dart';
 import '../providers/subscription_provider.dart';
 import '../../cards/providers/card_provider.dart';
 import '../../cards/views/add_card_view.dart';
-import '../../../../core/utils/icon_helper.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../payments/services/payment_service.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/services/subscription_service.dart';
+import '../../cards/models/card.dart';
 import 'paywall_view.dart';
 
 class EditSubscriptionView extends ConsumerStatefulWidget {
@@ -215,118 +214,79 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _priceController,
-                      focusNode: _priceFocusNode,
-                      decoration: _inputDecoration('Tutar'),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$'))],
-                      validator: (v) => v == null || v.isEmpty ? 'Gerekli' : null,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _currency,
-                      decoration: _inputDecoration('Döviz'),
-                      items: ['₺', '€', r'$'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) => setState(() => _currency = v!),
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _priceController,
+                focusNode: _priceFocusNode,
+                decoration: _inputDecoration('Tutar').copyWith(
+                  hintText: '79.99',
+                  suffixText: '₺',
+                  suffixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$'))],
+                validator: (v) => v == null || v.isEmpty ? 'Gerekli' : null,
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _billingCycle,
-                decoration: _inputDecoration('Ödeme Periyodu'),
-                items: const [
-                  DropdownMenuItem(value: 'weekly', child: Text('Haftalık')),
-                  DropdownMenuItem(value: 'monthly', child: Text('Aylık')),
-                  DropdownMenuItem(value: '3_months', child: Text('3 Aylık')),
-                  DropdownMenuItem(value: '6_months', child: Text('6 Aylık')),
-                  DropdownMenuItem(value: 'yearly', child: Text('Yıllık')),
-                ],
-                onChanged: (v) => setState(() => _billingCycle = v!),
+              _buildSelectionField(
+                label: 'Ödeme Periyodu',
+                value: _getBillingCycleText(_billingCycle),
+                icon: Icons.repeat_rounded,
+                onTap: _showBillingCycleSheet,
               ),
               const SizedBox(height: 16),
               categoriesAsync.when(
                 data: (cats) {
-                  final currentId = cats.any((c) => c['id'] == _selectedCategoryId) ? _selectedCategoryId : null;
-                  return DropdownButtonFormField<String>(
-                    value: currentId,
-                    decoration: _inputDecoration('Kategori'),
-                    hint: const Text('Kategori Seçin'),
-                    items: cats.map((c) {
-                      return DropdownMenuItem(
-                        value: c['id'] as String,
-                        child: Row(
-                          children: [
-                            if (c['icon_name'] != null)
-                              FaIcon(
-                                IconHelper.getIcon(c['icon_name'] as String),
-                                size: 18,
-                                color: Theme.of(context).primaryColor,
-                              )
-                            else if (c['icon'] != null)
-                              Icon(_getIconData(c['icon'] as String), size: 18),
-                            const SizedBox(width: 8),
-                            Text(c['name'] as String),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: _selectedServiceId != null ? null : (v) => setState(() => _selectedCategoryId = v),
+                  final selectedCat = cats.firstWhere(
+                    (c) => c['id'] == _selectedCategoryId,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  final hasSelection = selectedCat.isNotEmpty;
+                  return _buildSelectionField(
+                    label: 'Kategori',
+                    value: hasSelection ? selectedCat['name'] as String : 'Diğer',
+                    icon: Icons.category_outlined,
+                    onTap: _selectedServiceId != null ? null : () => _showCategorySheet(cats),
+                    prefixIcon: hasSelection
+                        ? Image.asset(
+                            'assets/categories/${selectedCat['icon_name']}.png',
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.asset('assets/categories/other.png', width: 20, height: 20),
+                          )
+                        : null,
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Kategoriler yüklenemedi'),
+                error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 16),
               cardsAsync.when(
                 data: (cards) {
-                  final currentCardId = cards.any((c) => c.id == _selectedCardId) ? _selectedCardId : null;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        value: currentCardId,
-                        decoration: _inputDecoration('Ödeme Yöntemi').copyWith(hintText: 'Kart Seçin (İsteğe Bağlı)'),
-                        items: [
-                          const DropdownMenuItem<String>(value: null, child: Text('Seçilmedi')),
-                          ...cards.map(
-                            (c) => DropdownMenuItem(value: c.id, child: Text('${c.cardName} ${c.lastFour}')),
-                          ),
-                        ],
-                        onChanged: (v) => setState(() => _selectedCardId = v),
-                      ),
-                      if (cards.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8, left: 4),
-                          child: InkWell(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) => const AddCardView(),
-                              );
-                            },
-                            child: Text(
-                              '+ Yeni Kart Ekle',
-                              style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                    ],
+                  final selectedCard = cards.cast<PaymentCard?>().firstWhere(
+                    (c) => c?.id == _selectedCardId,
+                    orElse: () => null,
+                  );
+                  return _buildSelectionField(
+                    label: 'Ödeme Yöntemi',
+                    value: selectedCard != null
+                        ? '${selectedCard.cardName} (**** ${selectedCard.lastFour})'
+                        : 'Seçilmedi',
+                    prefixIcon: Image.asset(
+                      'assets/services/credit_card.png',
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.credit_card_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    onTap: () => _showCardSheet(cards),
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const SizedBox(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 16),
               InkWell(
@@ -380,20 +340,258 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     );
   }
 
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'movie':
-        return Icons.movie_rounded;
-      case 'play_circle':
-        return Icons.play_circle_rounded;
-      case 'code':
-        return Icons.code_rounded;
-      case 'settings':
-        return Icons.settings_rounded;
-      case 'school':
-        return Icons.school_rounded;
+  Widget _buildSelectionField({
+    required String label,
+    required String value,
+    IconData? icon,
+    required VoidCallback? onTap,
+    Widget? prefixIcon,
+  }) {
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(24);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: radius,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: radius,
+        ),
+        child: Row(
+          children: [
+            if (prefixIcon != null) ...[
+              prefixIcon,
+              const SizedBox(width: 12),
+            ] else ...[
+              Icon(icon, size: 22, color: theme.hintColor.withValues(alpha: 0.7)),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: theme.hintColor),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: onTap == null ? theme.disabledColor : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.keyboard_arrow_down_rounded, color: theme.hintColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBillingCycleSheet() {
+    final cycles = {
+      'weekly': 'Haftalık',
+      'monthly': 'Aylık',
+      '3_months': '3 Aylık',
+      '6_months': '6 Aylık',
+      'yearly': 'Yıllık',
+    };
+
+    _showModernSheet(
+      title: 'Ödeme Periyodu Seç',
+      children: cycles.entries.map((e) {
+        return _buildSheetItem(
+          title: e.value,
+          isSelected: _billingCycle == e.key,
+          onTap: () {
+            setState(() => _billingCycle = e.key);
+            Navigator.pop(context);
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  void _showCardSheet(List<PaymentCard> cards) {
+    final theme = Theme.of(context);
+    _showModernSheet(
+      title: 'Ödeme Yöntemi Seç',
+      children: [
+        ...cards.map((c) {
+          return _buildSheetItem(
+            title: '${c.cardName} (**** ${c.lastFour})',
+            isSelected: _selectedCardId == c.id,
+            prefix: Image.asset(
+              'assets/services/credit_card.png',
+              width: 20,
+              height: 20,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(Icons.credit_card_rounded, size: 20, color: theme.colorScheme.primary),
+            ),
+            onTap: () {
+              setState(() => _selectedCardId = c.id);
+              Navigator.pop(context);
+            },
+          );
+        }),
+        _buildSheetItem(
+          title: 'Seçilmedi',
+          isSelected: _selectedCardId == null,
+          prefix: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
+          onTap: () {
+            setState(() => _selectedCardId = null);
+            Navigator.pop(context);
+          },
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const AddCardView(),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.primaryColor.withOpacity(0.1),
+              foregroundColor: theme.primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Yeni Kart Ekle', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showCategorySheet(List<dynamic> cats) {
+    _showModernSheet(
+      title: 'Kategori Seç',
+      children: cats.map((c) {
+        return _buildSheetItem(
+          title: c['name'] as String,
+          isSelected: _selectedCategoryId == c['id'],
+          prefix: Image.asset(
+            'assets/categories/${c['icon_name']}.png',
+            width: 22,
+            height: 22,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) =>
+                Image.asset('assets/categories/other.png', width: 22, height: 22),
+          ),
+          onTap: () {
+            setState(() => _selectedCategoryId = c['id'] as String);
+            Navigator.pop(context);
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  void _showModernSheet({required String title, required List<Widget> children}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.45,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 20),
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 32, left: 16, right: 16),
+                child: Column(children: children),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetItem({
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+    Widget? prefix,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? theme.primaryColor.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? theme.primaryColor.withOpacity(0.3) : theme.dividerColor.withOpacity(0.05),
+            ),
+          ),
+          child: Row(
+            children: [
+              if (prefix != null) ...[prefix, const SizedBox(width: 16)],
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? theme.primaryColor : null,
+                  ),
+                ),
+              ),
+              if (isSelected) Icon(Icons.check_circle_rounded, color: theme.primaryColor, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getBillingCycleText(String cycle) {
+    switch (cycle) {
+      case 'weekly':
+        return 'Haftalık';
+      case 'monthly':
+        return 'Aylık';
+      case '3_months':
+        return '3 Aylık';
+      case '6_months':
+        return '6 Aylık';
+      case 'yearly':
+        return 'Yıllık';
       default:
-        return Icons.category_rounded;
+        return 'Aylık';
     }
   }
 
@@ -401,9 +599,10 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     final radius = BorderRadius.circular(24);
     return InputDecoration(
       labelText: label,
+      labelStyle: const TextStyle(fontSize: 13),
       filled: true,
       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(

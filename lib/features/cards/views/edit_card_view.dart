@@ -98,10 +98,13 @@ class _EditCardViewState extends ConsumerState<EditCardView> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _lastFourController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Son 4 Hane',
                   hintText: '1234',
-                  prefixIcon: Icon(Icons.credit_card_rounded),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Image.asset('assets/services/credit_card.png', width: 20, height: 20, fit: BoxFit.contain),
+                  ),
                 ),
                 keyboardType: TextInputType.number,
                 maxLength: 4,

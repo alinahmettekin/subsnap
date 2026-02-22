@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../models/subscription.dart';
 import '../../models/service.dart';
 import '../../providers/subscription_provider.dart';
-import '../../../../core/utils/icon_helper.dart';
 
 class SubscriptionIcon extends ConsumerWidget {
   final Subscription subscription;
@@ -15,7 +13,6 @@ class SubscriptionIcon extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final servicesAsync = ref.watch(servicesProvider);
-    final theme = Theme.of(context);
 
     return servicesAsync.when(
       data: (services) {
@@ -35,41 +32,48 @@ class SubscriptionIcon extends ConsumerWidget {
           } catch (_) {}
         }
 
-        if (matchedService != null) {
-          final color = IconHelper.getColor(matchedService.color);
-          final icon = IconHelper.getIcon(matchedService.iconName);
-
+        // Widget builder helper for consistent container
+        Widget buildIconContainer(Widget child) {
           return Container(
             width: size,
             height: size,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(16)),
-            child: Center(
-              child: FaIcon(icon, color: color, size: size * 0.45),
-            ),
+            decoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(16)),
+            child: Center(child: child),
           );
         }
 
-        // Fallback to initials
-        return _buildInitials(theme);
-      },
-      loading: () => _buildInitials(theme),
-      error: (_, _) => _buildInitials(theme),
-    );
-  }
+        // Helper to build the default/fallback icon
+        Widget buildDefaultIcon() {
+          return buildIconContainer(
+            Image.asset('assets/categories/other.png', width: size * 0.6, height: size * 0.6, fit: BoxFit.contain),
+          );
+        }
 
-  Widget _buildInitials(ThemeData theme) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0150),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Text(
-          subscription.name.isNotEmpty ? subscription.name[0].toUpperCase() : '?',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: size * 0.45, color: theme.colorScheme.primary),
-        ),
+        // If there's no matched service or no iconName, we immediately show the default
+        if (matchedService == null || matchedService.iconName == null || matchedService.iconName!.isEmpty) {
+          return buildDefaultIcon();
+        }
+
+        final String assetPath = 'assets/services/${matchedService.iconName}.png';
+
+        return Image.asset(
+          assetPath,
+          width: size * 0.6,
+          height: size * 0.6,
+          fit: BoxFit.contain,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            return buildIconContainer(child);
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return buildDefaultIcon();
+          },
+        );
+      },
+      loading: () => Container(width: size, height: size, color: Colors.transparent),
+      error: (_, _) => Container(
+        width: size,
+        height: size,
+        child: Icon(Icons.error_outline, size: size * 0.5),
       ),
     );
   }

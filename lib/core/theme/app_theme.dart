@@ -1,6 +1,5 @@
 ﻿import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Define the custom color scheme for Light Mode (Midas/Modern Financial Style)
@@ -52,7 +51,7 @@ class AppTheme {
       useMaterial3: true,
       swapLegacyOnMaterial3: true,
       // Modern Financial Font
-      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+      fontFamily: 'PlusJakartaSans',
       textTheme: _textTheme,
     );
   }
@@ -81,7 +80,7 @@ class AppTheme {
       useMaterial3: true,
       swapLegacyOnMaterial3: true,
       // Modern Financial Font
-      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+      fontFamily: 'PlusJakartaSans',
       textTheme: _textTheme,
     );
   }
@@ -91,13 +90,15 @@ class AppTheme {
   static TextTheme get _textTheme {
     return TextTheme(
       // Extra Large (18sp) - Page Titles
-      headlineMedium: GoogleFonts.plusJakartaSans(
+      headlineMedium: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 18,
         fontWeight: FontWeight.w700,
         height: 1.2,
         letterSpacing: -0.5,
       ),
-      headlineSmall: GoogleFonts.plusJakartaSans(
+      headlineSmall: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 17,
         fontWeight: FontWeight.w700,
         height: 1.2,
@@ -105,13 +106,15 @@ class AppTheme {
       ),
 
       // Large (14sp) - Section Headers / Usernames / Buttons
-      titleLarge: GoogleFonts.plusJakartaSans(
+      titleLarge: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         height: 1.25,
         letterSpacing: -0.2,
       ),
-      titleMedium: GoogleFonts.plusJakartaSans(
+      titleMedium: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.25,
@@ -119,13 +122,15 @@ class AppTheme {
       ),
 
       // Medium (12sp) - Body Text
-      bodyLarge: GoogleFonts.plusJakartaSans(
+      bodyLarge: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 1.4,
         letterSpacing: -0.1,
       ),
-      bodyMedium: GoogleFonts.plusJakartaSans(
+      bodyMedium: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 12,
         fontWeight: FontWeight.normal,
         height: 1.4,
@@ -133,13 +138,15 @@ class AppTheme {
       ),
 
       // Small (10sp) - Meta data
-      bodySmall: GoogleFonts.plusJakartaSans(
+      bodySmall: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 10,
         fontWeight: FontWeight.normal,
         height: 1.3,
         letterSpacing: 0.1,
       ),
-      labelLarge: GoogleFonts.plusJakartaSans(
+      labelLarge: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 10,
         fontWeight: FontWeight.w600,
         height: 1.3,
@@ -147,13 +154,15 @@ class AppTheme {
       ),
 
       // Extra Small (9sp) - Legal/Helpers
-      labelMedium: GoogleFonts.plusJakartaSans(
+      labelMedium: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 9,
         fontWeight: FontWeight.w500,
         height: 1.2,
         letterSpacing: 0.2,
       ),
-      labelSmall: GoogleFonts.plusJakartaSans(
+      labelSmall: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
         fontSize: 9,
         fontWeight: FontWeight.w500,
         height: 1.2,

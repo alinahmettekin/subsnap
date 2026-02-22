@@ -8,10 +8,16 @@ import '../../subscriptions/views/paywall_view.dart';
 import '../../cards/views/cards_list_view.dart';
 import '../../cards/providers/card_provider.dart';
 import '../../support/views/help_and_support_view.dart';
+import '../../../core/theme/theme_provider.dart';
 
-class SettingsView extends ConsumerWidget {
+class SettingsView extends ConsumerStatefulWidget {
   const SettingsView({super.key});
 
+  @override
+  ConsumerState<SettingsView> createState() => _SettingsViewState();
+}
+
+class _SettingsViewState extends ConsumerState<SettingsView> {
   Future<void> _manageSubscription() async {
     final Uri url = Platform.isIOS
         ? Uri.parse('https://apps.apple.com/account/subscriptions')
@@ -22,7 +28,7 @@ class SettingsView extends ConsumerWidget {
     }
   }
 
-  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref, String? userEmail) {
+  void _showDeleteAccountDialog(String? userEmail) {
     if (userEmail == null) return;
 
     final emailController = TextEditingController();
@@ -30,7 +36,7 @@ class SettingsView extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (dialogContext, setDialogState) {
           final isMatch = emailController.text.trim() == userEmail;
 
           return AlertDialog(
@@ -55,28 +61,28 @@ class SettingsView extends ConsumerWidget {
                     border: const OutlineInputBorder(),
                     errorText: emailController.text.isNotEmpty && !isMatch ? 'E-posta eşleşmiyor' : null,
                   ),
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setDialogState(() {}),
                 ),
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('İptal')),
               FilledButton(
                 onPressed: isMatch
                     ? () async {
+                        final navigator = Navigator.of(context);
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
+
                         try {
+                          // Hemen diyaloğu kapat
+                          navigator.pop();
+
+                          // Hesabı sil
                           await ref.read(authServiceProvider).deleteAccount();
-                          if (context.mounted) {
-                            Navigator.pop(context); // Close dialog
-                            Navigator.of(context).popUntil((route) => route.isFirst); // Go to splash/login
-                          }
                         } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red));
-                            Navigator.pop(context);
-                          }
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+                          );
                         }
                       }
                     : null,
@@ -94,7 +100,7 @@ class SettingsView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authService = ref.watch(authServiceProvider);
     final user = authService.currentUser;
     final isPremiumAsync = ref.watch(isPremiumProvider);
@@ -135,10 +141,14 @@ class SettingsView extends ConsumerWidget {
                   value: isPremium ? 'Premium' : 'Ücretsiz Plan',
                   iconColor: Colors.amber,
                 ),
-
                 const SizedBox(height: 8),
                 _SettingsTile(
-                  icon: Icons.credit_card_rounded,
+                  iconWidget: Image.asset(
+                    'assets/services/credit_card.png',
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.contain,
+                  ),
                   title: 'Ödeme Yöntemlerim',
                   value: ref
                       .watch(cardCountProvider)
@@ -165,18 +175,40 @@ class SettingsView extends ConsumerWidget {
               value: 'Bilinmiyor',
             ),
           ),
-          const Divider(height: 32),
           _SettingsTile(
             icon: Icons.help_outline_rounded,
             title: 'Yardım ve Destek',
             value: 'SSS & İletişim',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportView())),
           ),
-          const SizedBox(height: 32),
+          const Divider(height: 32),
+          Text(
+            'Görünüm',
+            style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.brightness_auto_rounded), label: Text('Sistem')),
+              ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_rounded), label: Text('Açık')),
+              ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_rounded), label: Text('Koyu')),
+            ],
+            selected: {ref.watch(themeSettingsProvider)},
+            onSelectionChanged: (Set<ThemeMode> newSelection) {
+              ref.read(themeSettingsProvider.notifier).setTheme(newSelection.first);
+            },
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(
+              selectedBackgroundColor: theme.colorScheme.primary,
+              selectedForegroundColor: theme.colorScheme.onPrimary,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(height: 48),
           OutlinedButton.icon(
             onPressed: () async {
               await authService.signOut();
-              if (context.mounted) {
+              if (mounted) {
                 Navigator.of(context).popUntil((route) => route.isFirst);
               }
             },
@@ -191,7 +223,7 @@ class SettingsView extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           TextButton.icon(
-            onPressed: () => _showDeleteAccountDialog(context, ref, user?.email),
+            onPressed: () => _showDeleteAccountDialog(user?.email),
             icon: const Icon(Icons.delete_forever_rounded, size: 20),
             label: const Text('Hesabımı Sil'),
             style: TextButton.styleFrom(
@@ -206,19 +238,21 @@ class SettingsView extends ConsumerWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final String title;
   final String? value;
   final VoidCallback? onTap;
   final Color? iconColor;
 
-  const _SettingsTile({required this.icon, required this.title, this.value, this.onTap, this.iconColor});
+  const _SettingsTile({this.icon, this.iconWidget, required this.title, this.value, this.onTap, this.iconColor});
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: iconColor ?? Theme.of(context).colorScheme.primary),
+      leading:
+          iconWidget ?? (icon != null ? Icon(icon, color: iconColor ?? Theme.of(context).colorScheme.primary) : null),
       title: Text(title),
       trailing: value != null
           ? Text(value!, style: const TextStyle(fontWeight: FontWeight.bold))

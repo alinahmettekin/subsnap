@@ -1,7 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_view.dart';
-import 'sign_up_view.dart';
 
 class LandingView extends ConsumerWidget {
   const LandingView({super.key});
@@ -58,8 +57,8 @@ class LandingView extends ConsumerWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Yeni üyelere özel 1 Ay Ücretsiz Premium deneme fırsatı!',
-                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                              'Yeni kullanıcılara özel  1  ay ücretsiz Premium deneme fırsatı!',
+                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -70,7 +69,7 @@ class LandingView extends ConsumerWidget {
                 const SizedBox(height: 32),
                 FilledButton(
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SignUpView()));
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginView()));
                   },
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 60),
@@ -78,14 +77,7 @@ class LandingView extends ConsumerWidget {
                   ),
                   child: const Text('Hemen Başla'),
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginView()));
-                  },
-                  child: const Text('Zaten hesabım var'),
-                ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 48),
               ],
             ),
           ),

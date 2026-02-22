@@ -90,6 +90,10 @@ class PaymentService {
   Future<void> deletePayment(String paymentId) async {
     await _client.from('payments').delete().eq('id', paymentId);
   }
+
+  Future<void> updatePayment(String paymentId, Map<String, dynamic> data) async {
+    await _client.from('payments').update(data).eq('id', paymentId);
+  }
 }
 
 @Riverpod(keepAlive: true)

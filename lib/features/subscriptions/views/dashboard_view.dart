@@ -81,14 +81,7 @@ class DashboardView extends ConsumerWidget {
                   IconButton(
                     onPressed: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedSubscriptionsView())),
-                    icon: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
-                      ),
-                      child: Icon(Icons.history_rounded, color: theme.colorScheme.secondary),
-                    ),
+                    icon: Icon(Icons.history_rounded, color: theme.colorScheme.secondary),
                     tooltip: 'İptal Edilenler',
                   ),
                   const SizedBox(width: 8),
@@ -234,17 +227,10 @@ class DashboardView extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.add_circle_outline_rounded,
-                            size: 48,
-                            color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                          ),
+                        Icon(
+                          Icons.add_circle_outline_rounded,
+                          size: 64,
+                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
                         ),
                         const SizedBox(height: 24),
                         Text(
@@ -414,7 +400,7 @@ class _SubscriptionListTile extends StatelessWidget {
           },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
             child: Row(
               children: [
                 SubscriptionIcon(subscription: subscription),
@@ -443,9 +429,9 @@ class _SubscriptionListTile extends StatelessWidget {
                   children: [
                     Text(
                       '${subscription.price} ${subscription.currency}',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.primary,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),

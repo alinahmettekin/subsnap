@@ -75,6 +75,48 @@ class ArchivedSubscriptionsView extends ConsumerWidget {
     }
   }
 
+  void _handleEditPrice(BuildContext context, WidgetRef ref, Subscription sub) {
+    final controller = TextEditingController(text: sub.price.toString());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ücreti Düzenle'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${sub.name} aboneliğinin arşivdeki ücretini güncelleyin:'),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Tutar',
+                suffixText: sub.currency,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
+          FilledButton(
+            onPressed: () async {
+              final newPrice = double.tryParse(controller.text);
+              if (newPrice != null) {
+                final updatedSub = sub.copyWith(price: newPrice);
+                await ref.read(subscriptionRepositoryProvider).updateSubscription(updatedSub);
+                ref.invalidate(archivedSubscriptionsProvider);
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Güncelle'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final archivedAsync = ref.watch(archivedSubscriptionsProvider);
@@ -125,6 +167,12 @@ class ArchivedSubscriptionsView extends ConsumerWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      IconButton(
+                        tooltip: 'Ücreti Düzenle',
+                        icon: const Icon(Icons.edit_rounded, size: 20),
+                        color: theme.colorScheme.secondary,
+                        onPressed: () => _handleEditPrice(context, ref, sub),
+                      ),
                       IconButton(
                         tooltip: 'Tekrar Aktif Et',
                         icon: const Icon(Icons.restore_rounded),

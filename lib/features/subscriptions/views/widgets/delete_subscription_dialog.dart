@@ -79,7 +79,7 @@ class _DeleteSubscriptionDialogState extends State<DeleteSubscriptionDialog> {
               theme: theme,
               option: DeleteOption.subscriptionWithPayments,
               title: 'Tamamen Kaldır',
-              subtitle: 'Abonelik ve tüm geçmiş veriler kalıcı olarak silinir.',
+              subtitle: 'Abonelik ve tüm geçmiş ödemeler kalıcı olarak silinir.',
               icon: Icons.delete_forever_outlined,
               isSelected: _selectedOption == DeleteOption.subscriptionWithPayments,
               isDestructiveOption: true,

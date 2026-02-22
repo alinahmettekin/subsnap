@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS categories (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     icon_name TEXT,
-    color TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -69,9 +68,8 @@ CREATE TABLE IF NOT EXISTS services (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     icon_name TEXT,
-    color TEXT,
+    default_billing_cycle TEXT DEFAULT 'monthly', -- ADDED DEFAULT CYCLE
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-    default_price NUMERIC(10, 2),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -329,27 +327,27 @@ CREATE TRIGGER on_subscription_created_generate_history
 -- ==========================================
 -- Seed Data
 -- ==========================================
-INSERT INTO categories (name, color, icon_name) VALUES
-('Dijital Platformlar', '#E50914', 'film'),
-('Araçlar', '#007AFF', 'cloud'),
-('Finans', '#34C759', 'attach_money'),
-('İş & Kariyer', '#5856D6', 'work'),
-('Yazılım', '#FF9500', 'code'),
-('Eğitim', '#FF2D55', 'school'),
-('Tasarım', '#AF52DE', 'palette'),
-('Yapay Zeka', '#00C7BE', 'psychology'),
-('Alışveriş', '#FF3B30', 'shopping_bag'),
-('Mobil Operatörler', '#34C759', 'phone'),
-('İnternet Servis Sağlayıcıları', '#007AFF', 'wifi'),
-('Diğer', '#95A5A6', 'more_horiz')
+INSERT INTO categories (name, icon_name) VALUES
+('Dijital Platformlar', 'film'),
+('Araçlar', 'cloud'),
+('Finans', 'finance'),
+('İş & Kariyer', 'work'),
+('Yazılım', 'code'),
+('Eğitim', 'school'),
+('Tasarım', 'palette'),
+('Yapay Zeka', 'ai'),
+('Alışveriş', 'shopping_bag'),
+('Mobil Operatörler', 'phone'),
+('İnternet Servis Sağlayıcıları', 'wifi'),
+('Vergi & Kamu', 'description'), -- NEW CATEGORY
+('Diğer', 'other')
 ON CONFLICT (name) DO UPDATE SET 
-    color = EXCLUDED.color,
     icon_name = EXCLUDED.icon_name;
 
 DO $$
 DECLARE
     cat_streaming uuid; cat_utility uuid; cat_mobile uuid; cat_isp uuid; 
-    cat_software uuid; cat_design uuid; cat_ai uuid;
+    cat_software uuid; cat_design uuid; cat_ai uuid; cat_gov uuid;
 BEGIN
     SELECT id INTO cat_streaming FROM categories WHERE name = 'Dijital Platformlar';
     SELECT id INTO cat_utility FROM categories WHERE name = 'Araçlar';
@@ -358,34 +356,35 @@ BEGIN
     SELECT id INTO cat_software FROM categories WHERE name = 'Yazılım';
     SELECT id INTO cat_design FROM categories WHERE name = 'Tasarım';
     SELECT id INTO cat_ai FROM categories WHERE name = 'Yapay Zeka';
+    SELECT id INTO cat_gov FROM categories WHERE name = 'Vergi & Kamu';
 
-    INSERT INTO services (name, icon_name, color, default_price, category_id) VALUES
-    ('Netflix', 'film', '#E50914', 199.99, cat_streaming),
-    ('Spotify', 'music', '#1DB954', 59.99, cat_streaming),
-    ('YouTube Premium', 'youtube', '#FF0000', 57.99, cat_streaming),
-    ('Disney+', 'disney', '#113CCF', 134.99, cat_streaming),
-    ('Amazon Prime', 'amazon', '#00A8E1', 39.00, cat_streaming),
-    ('Apple Music', 'apple', '#FA243C', 39.99, cat_streaming),
-    ('BluTV', 'blutv', '#1F2833', 99.90, cat_streaming),
-    ('Exxen', 'exxen', '#FFCC00', 129.90, cat_streaming),
-    ('iCloud', 'cloud', '#007AFF', 12.99, cat_utility),
-    ('Google One', 'google', '#4285F4', 9.99, cat_utility),
-    ('Turkcell', 'phone', '#2D3E50', 0, cat_mobile),
-    ('Vodafone', 'phone', '#E60000', 0, cat_mobile),
-    ('Türk Telekom', 'phone', '#002855', 0, cat_mobile),
-    ('TurkNet', 'wifi', '#D9232E', 399.90, cat_isp),
-    ('Superonline', 'wifi', '#FFC107', 0, cat_isp),
-    ('Türk Telekom İnternet', 'wifi', '#002855', 0, cat_isp),
-    ('GitHub Copilot', 'github', '#000000', 10.00, cat_software),
-    ('JetBrains', 'code', '#000000', 0, cat_software),
-    ('Adobe Creative Cloud', 'adobe', '#FF0000', 0, cat_design),
-    ('Figma', 'figma', '#F24E1E', 15.00, cat_design),
-    ('ChatGPT Plus', 'chatgpt', '#10A37F', 20.00, cat_ai),
-    ('Claude Pro', 'claude', '#D97757', 20.00, cat_ai),
-    ('Gemini Advanced', 'gemini', '#4285F4', 0, cat_ai)
+    INSERT INTO services (name, icon_name, default_billing_cycle, category_id) VALUES
+    ('Netflix', 'netflix', 'monthly', cat_streaming),
+    ('Spotify', 'spotify', 'monthly', cat_streaming),
+    ('YouTube Premium', 'youtube', 'monthly', cat_streaming),
+    ('Disney+', 'disney_plus', 'monthly', cat_streaming),
+    ('Amazon Prime', 'amazon', 'monthly', cat_streaming),
+    ('Apple Music', 'apple_music', 'monthly', cat_streaming),
+    ('Exxen', 'exxen', 'monthly', cat_streaming),
+    ('iCloud', 'icloud', 'monthly', cat_utility),
+    ('Google One', 'google_one', 'monthly', cat_utility),
+    ('Turkcell', 'turkcell', 'monthly', cat_mobile),
+    ('Vodafone', 'vodafone', 'monthly', cat_mobile),
+    ('Vodafone Net', 'vodafone', 'monthly', cat_isp),
+    ('Türk Telekom', 'turktelekom', 'monthly', cat_mobile),
+    ('TurkNet', 'turknet', 'monthly', cat_isp),
+    ('Superonline', 'turkcell', 'monthly', cat_isp),
+    ('Türk Telekom İnternet', 'turktelekom', 'monthly', cat_isp),
+    ('GitHub ', 'github', 'monthly', cat_software),
+    ('Cursor', 'cursor', 'monthly', cat_software),
+    ('Adobe Creative Cloud', 'adobe_creative_cloud', 'monthly', cat_design),
+    ('Figma', 'figma', 'monthly', cat_design),
+    ('ChatGPT', 'chatgpt', 'monthly', cat_ai),
+    ('Claude', 'claude', 'monthly', cat_ai),
+    ('Motorlu Taşıtlar Vergisi', 'car', '6_months', (SELECT id FROM categories WHERE name = 'Vergi & Kamu')),
+    ('Digiturk', 'digiturk', 'monthly', cat_streaming)
     ON CONFLICT (name) DO UPDATE SET 
         category_id = EXCLUDED.category_id, 
-        default_price = EXCLUDED.default_price,
-        icon_name = EXCLUDED.icon_name,
-        color = EXCLUDED.color;
+        default_billing_cycle = EXCLUDED.default_billing_cycle,
+        icon_name = EXCLUDED.icon_name;
 END $$;

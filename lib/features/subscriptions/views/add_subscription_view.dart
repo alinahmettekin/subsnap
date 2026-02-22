@@ -11,9 +11,8 @@ import 'paywall_view.dart';
 import '../../cards/providers/card_provider.dart';
 import '../../cards/views/add_card_view.dart';
 import '../models/service.dart';
-import '../../../../core/utils/icon_helper.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../payments/services/payment_service.dart';
+import '../../cards/models/card.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/widgets/custom_date_picker.dart';
 
@@ -175,7 +174,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
         status: 'active',
         categoryId: _selectedCategoryId,
         cardId: _selectedCardId,
-        serviceId: _selectedServiceId,
+        serviceId: _selectedServiceId == 'custom' ? null : _selectedServiceId,
         startDate: _startDate,
       );
 
@@ -242,164 +241,131 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Yeni Abonelik',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
               servicesAsync.when(
-                data: (services) => _buildPopularServices(categoriesAsync.asData?.value, services),
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                readOnly: _selectedServiceId != null,
-                decoration: _inputDecoration('Abonelik Adı').copyWith(
-                  prefixIcon: const Icon(Icons.subscriptions_outlined),
-                  suffixIcon: _selectedServiceId != null
-                      ? IconButton(
-                          icon: const Icon(Icons.close, color: Colors.grey),
-                          onPressed: () {
-                            setState(() {
-                              _selectedServiceId = null;
-                              _nameController.clear();
-                              _priceController.clear(); // clearing price too as requested implicitly "clear selection"
-                              _selectedCategoryId = null;
-                            });
-                          },
-                          tooltip: 'Seçimi Temizle',
-                        )
-                      : null,
-                ),
-                validator: (value) => value?.isEmpty ?? true ? 'Zorunlu alan' : null,
-              ),
-              const SizedBox(height: 16),
+                data: (services) {
+                  final hasService = _selectedServiceId != null;
+                  final isCustom = _selectedServiceId == 'custom';
 
-              // Price and Currency Row (skipping for now, target next block)
-              // Wait, I need to find where Category dropdown is.
-              // It is probably further down.
-              // Let's target the Category Dropdown specifically.
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _priceController,
-                      focusNode: _priceFocusNode,
-                      decoration: _inputDecoration('Tutar'),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$'))],
-                      validator: (v) => v == null || v.isEmpty ? 'Gerekli' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _currency,
-                      decoration: _inputDecoration('Döviz'),
-                      items: ['₺', '€', r'$'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) => setState(() => _currency = v!),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _billingCycle,
-                decoration: _inputDecoration('Ödeme Periyodu'),
-                items: const [
-                  DropdownMenuItem(value: 'weekly', child: Text('Haftalık')),
-                  DropdownMenuItem(value: 'monthly', child: Text('Aylık')),
-                  DropdownMenuItem(value: '3_months', child: Text('3 Aylık')),
-                  DropdownMenuItem(value: '6_months', child: Text('6 Aylık')),
-                  DropdownMenuItem(value: 'yearly', child: Text('Yıllık')),
-                ],
-                onChanged: (v) {
-                  setState(() {
-                    _billingCycle = v!;
-                    _calculateNextBillingDate();
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              categoriesAsync.when(
-                data: (cats) => DropdownButtonFormField<String>(
-                  initialValue: _selectedCategoryId, // Changed from initialValue to value
-                  decoration: _inputDecoration('Kategori'),
-                  hint: const Text('Kategori (Varsayılan: Diğer)'),
-                  items: cats
-                      .map(
-                        (c) => DropdownMenuItem(
-                          value: c['id'] as String,
-                          child: Row(
-                            children: [
-                              if (c['icon_name'] != null)
-                                FaIcon(
-                                  IconHelper.getIcon(c['icon_name'] as String),
-                                  size: 18,
-                                  color: Theme.of(context).primaryColor,
-                                )
-                              else if (c['icon'] != null)
-                                Icon(_getIconData(c['icon'] as String), size: 18),
-                              const SizedBox(width: 8),
-                              Text(c['name'] as String),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: _selectedServiceId != null ? null : (v) => setState(() => _selectedCategoryId = v),
-                  validator: (v) => null, // Optional, defaults to Other
-                ),
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Kategoriler yüklenemedi'),
-              ),
-              const SizedBox(height: 16),
-              cardsAsync.when(
-                data: (cards) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedCardId,
-                        decoration: _inputDecoration('Ödeme Yöntemi').copyWith(hintText: 'Kart Seçin (İsteğe Bağlı)'),
-                        items: [
-                          const DropdownMenuItem<String>(value: null, child: Text('Seçilmedi')),
-                          ...cards.map(
-                            (c) => DropdownMenuItem(value: c.id, child: Text('${c.cardName} (**** ${c.lastFour})')),
-                          ),
-                        ],
-                        onChanged: (v) => setState(() => _selectedCardId = v),
-                      ),
-                      if (cards.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8, left: 4),
-                          child: InkWell(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) => const AddCardView(),
-                              );
-                            },
-                            child: Text(
-                              '+ Yeni Kart Ekle',
-                              style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                    ],
+                  final selectedService = isCustom
+                      ? Service(id: 'custom', name: 'Özel Oluştur', iconName: 'plus')
+                      : services.firstWhere(
+                          (s) => s.id == _selectedServiceId,
+                          orElse: () => Service(id: '', name: '', iconName: ''),
+                        );
+
+                  return _buildSelectionField(
+                    label: 'Servis Seçin',
+                    value: hasService ? selectedService.name : 'Popüler Servisler',
+                    icon: Icons.search_rounded,
+                    onTap: () => _showServiceSelectionSheet(categoriesAsync.asData?.value, services),
+                    prefixIcon: hasService
+                        ? (isCustom
+                              ? Icon(Icons.add_circle_outline_rounded, size: 22, color: theme.colorScheme.primary)
+                              : Image.asset(
+                                  'assets/services/${selectedService.iconName}.png',
+                                  width: 22,
+                                  height: 22,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => Image.asset(
+                                    'assets/categories/other.png',
+                                    width: 20,
+                                    height: 20,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ))
+                        : null,
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const SizedBox(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
+              if (_selectedServiceId == 'custom') ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _nameController,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  autofocus: true,
+                  decoration: _inputDecoration(
+                    'Abonelik Adı',
+                  ).copyWith(prefixIcon: const Icon(Icons.edit_note_rounded)),
+                  validator: (v) => v?.isEmpty ?? true ? 'Zorunlu' : null,
+                ),
+              ],
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _priceController,
+                focusNode: _priceFocusNode,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                decoration: _inputDecoration('Tutar').copyWith(
+                  hintText: '79.99',
+                  suffixText: '₺',
+                  suffixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$'))],
+                validator: (v) => v == null || v.isEmpty ? 'Gerekli' : null,
+              ),
+              const SizedBox(height: 12),
               const SizedBox(height: 16),
+              _buildSelectionField(
+                label: 'Ödeme Periyodu',
+                value: _getBillingCycleText(_billingCycle),
+                icon: Icons.repeat_rounded,
+                onTap: _showBillingCycleSheet,
+              ),
+              const SizedBox(height: 12),
+              categoriesAsync.when(
+                data: (cats) {
+                  final selectedCat = cats.firstWhere(
+                    (c) => c['id'] == _selectedCategoryId,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  final hasSelection = selectedCat.isNotEmpty;
+                  return _buildSelectionField(
+                    label: 'Kategori',
+                    value: hasSelection ? selectedCat['name'] as String : 'Diğer',
+                    icon: Icons.category_outlined,
+                    onTap: () => _showCategorySheet(cats),
+                    prefixIcon: hasSelection
+                        ? Image.asset(
+                            'assets/categories/${selectedCat['icon_name']}.png',
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.asset('assets/categories/other.png', width: 20, height: 20),
+                          )
+                        : null,
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 12),
+              cardsAsync.when(
+                data: (cards) {
+                  final selectedCard = cards.cast<PaymentCard?>().firstWhere(
+                    (c) => c?.id == _selectedCardId,
+                    orElse: () => null,
+                  );
+                  return _buildSelectionField(
+                    label: 'Ödeme Yöntemi',
+                    value: selectedCard != null
+                        ? '${selectedCard.cardName} (**** ${selectedCard.lastFour})'
+                        : 'Seçilmedi',
+                    prefixIcon: Image.asset(
+                      'assets/services/credit_card.png',
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                    ),
+                    onTap: () => _showCardSheet(cards),
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 12),
               InkWell(
                 onTap: _selectStartDate,
                 borderRadius: BorderRadius.circular(16),
@@ -452,116 +418,300 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
     );
   }
 
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'movie':
-        return Icons.movie_rounded;
-      case 'play_circle':
-        return Icons.play_circle_rounded;
-      case 'code':
-        return Icons.code_rounded;
-      case 'settings':
-        return Icons.settings_rounded;
-      case 'school':
-        return Icons.school_rounded;
-      default:
-        return Icons.category_rounded;
-    }
+  void _showServiceSelectionSheet(List<dynamic>? categories, List<Service> services) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, controller) => _ServiceSelectionSheet(
+          services: services,
+          categories: categories ?? [],
+          onSelected: (service) {
+            setState(() {
+              if (service.id == 'custom') {
+                _selectedServiceId = 'custom';
+                _nameController.clear();
+                _selectedCategoryId = null;
+              } else {
+                _selectedServiceId = service.id;
+                _nameController.text = service.name;
+                _selectedCategoryId = service.categoryId;
+                if (service.defaultBillingCycle != null) {
+                  _billingCycle = service.defaultBillingCycle!;
+                  _calculateNextBillingDate();
+                }
+              }
+            });
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
   }
 
-  Widget _buildPopularServices(List<dynamic>? categories, List<Service> services) {
-    if (services.isEmpty) return const SizedBox.shrink();
+  Widget _buildSelectionField({
+    required String label,
+    required String value,
+    IconData? icon,
+    required VoidCallback? onTap,
+    Widget? prefixIcon,
+  }) {
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(24);
 
-    void selectService(Service service) {
-      debugPrint('DEBUG: Selected service: ${service.name} (CatID: ${service.categoryId})');
+    return InkWell(
+      onTap: onTap,
+      borderRadius: radius,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: radius,
+        ),
+        child: Row(
+          children: [
+            if (prefixIcon != null) ...[
+              prefixIcon,
+              const SizedBox(width: 12),
+            ] else ...[
+              Icon(icon, size: 22, color: theme.hintColor.withValues(alpha: 0.7)),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: theme.hintColor),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: onTap == null ? theme.disabledColor : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.keyboard_arrow_down_rounded, color: theme.hintColor),
+          ],
+        ),
+      ),
+    );
+  }
 
-      setState(() {
-        _nameController.text = service.name;
-        _selectedServiceId = service.id;
+  void _showBillingCycleSheet() {
+    final cycles = {
+      'weekly': 'Haftalık',
+      'monthly': 'Aylık',
+      '3_months': '3 Aylık',
+      '6_months': '6 Aylık',
+      'yearly': 'Yıllık',
+    };
 
-        if (service.defaultPrice != null) {
-          _priceController.text = service.defaultPrice!.toStringAsFixed(2);
-        }
+    _showModernSheet(
+      title: 'Ödeme Periyodu Seç',
+      children: cycles.entries.map((e) {
+        return _buildSheetItem(
+          title: e.value,
+          isSelected: _billingCycle == e.key,
+          onTap: () {
+            setState(() {
+              _billingCycle = e.key;
+              _calculateNextBillingDate();
+            });
+            Navigator.pop(context);
+          },
+        );
+      }).toList(),
+    );
+  }
 
-        // Set category if available
-        if (service.categoryId != null) {
-          _selectedCategoryId = service.categoryId;
-        } else if (categories != null) {
-          // Fallback: try to match by name logical if no ID (though DB should have IDs)
-          // For now, simpler is better: rely on service.categoryId
-        }
-      });
-
-      // Auto-focus price if empty
-      if (_priceController.text.isEmpty || _priceController.text == '0.00') {
-        _priceFocusNode.requestFocus();
-      }
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  void _showCardSheet(List<PaymentCard> cards) {
+    final theme = Theme.of(context);
+    _showModernSheet(
+      title: 'Ödeme Yöntemi Seç',
       children: [
+        ...cards.map((c) {
+          return _buildSheetItem(
+            title: '${c.cardName} (**** ${c.lastFour})',
+            isSelected: _selectedCardId == c.id,
+            prefix: Image.asset('assets/services/credit_card.png', width: 20, height: 20, fit: BoxFit.contain),
+            onTap: () {
+              setState(() => _selectedCardId = c.id);
+              Navigator.pop(context);
+            },
+          );
+        }),
+        _buildSheetItem(
+          title: 'Seçilmedi',
+          isSelected: _selectedCardId == null,
+          prefix: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
+          onTap: () {
+            setState(() => _selectedCardId = null);
+            Navigator.pop(context);
+          },
+        ),
+        const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Popüler Servisler',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => DraggableScrollableSheet(
-                      initialChildSize: 0.8,
-                      minChildSize: 0.5,
-                      maxChildSize: 0.95,
-                      builder: (_, controller) => _ServiceSelectionSheet(
-                        services: services,
-                        onSelected: (s) {
-                          Navigator.pop(context);
-                          selectService(s);
-                        },
-                      ),
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('Tümünü Gör', style: TextStyle(fontSize: 12)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          child: Row(
-            children: services.map((service) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _ServiceCard(service: service, onTap: () => selectService(service)),
+          child: FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const AddCardView(),
               );
-            }).toList(),
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
+              foregroundColor: theme.primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Ekle', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ),
       ],
     );
   }
 
+  void _showCategorySheet(List<dynamic> cats) {
+    _showModernSheet(
+      title: 'Kategori Seç',
+      children: cats.map((c) {
+        return _buildSheetItem(
+          title: c['name'] as String,
+          isSelected: _selectedCategoryId == c['id'],
+          prefix: Image.asset(
+            'assets/categories/${c['icon_name']}.png',
+            width: 22,
+            height: 22,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) =>
+                Image.asset('assets/categories/other.png', width: 22, height: 22),
+          ),
+          onTap: () {
+            setState(() => _selectedCategoryId = c['id'] as String);
+            Navigator.pop(context);
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  void _showModernSheet({required String title, required List<Widget> children}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.45,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 32, left: 16, right: 16),
+                child: Column(children: children),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetItem({
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+    Widget? prefix,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? theme.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? theme.primaryColor.withValues(alpha: 0.3)
+                  : theme.dividerColor.withValues(alpha: 0.05),
+            ),
+          ),
+          child: Row(
+            children: [
+              if (prefix != null) ...[prefix, const SizedBox(width: 16)],
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? theme.primaryColor : null,
+                  ),
+                ),
+              ),
+              if (isSelected) Icon(Icons.check_circle_rounded, color: theme.primaryColor, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getBillingCycleText(String cycle) {
+    switch (cycle) {
+      case 'weekly':
+        return 'Haftalık';
+      case 'monthly':
+        return 'Aylık';
+      case '3_months':
+        return '3 Aylık';
+      case '6_months':
+        return '6 Aylık';
+      case 'yearly':
+        return 'Yıllık';
+      default:
+        return 'Aylık';
+    }
+  }
+
   InputDecoration _inputDecoration(String label) {
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(24);
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(fontSize: 13),
@@ -582,82 +732,16 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   }
 }
 
-class _ServiceCard extends StatelessWidget {
-  final Service service;
-  final VoidCallback onTap;
+// _ServiceCard removed as it is no longer used.
 
-  const _ServiceCard({required this.service, required this.onTap});
-
-  // ... rest of ServiceCard
-
-  @override
-  Widget build(BuildContext context) {
-    var color = _hexToColor(service.color);
-    final iconData = IconHelper.getIcon(service.iconName);
-
-    // Visibility logic
-    final isLight = color.computeLuminance() > 0.8;
-    final isDark = color.computeLuminance() < 0.1;
-
-    final avatarBg = isLight
-        ? const Color(0xFF202124)
-        : (isDark ? const Color(0xFFF1F3F4) : color.withValues(alpha: 0.2));
-
-    final iconColor = isLight ? Colors.white : (isDark ? Colors.black : color);
-
-    final containerBg = isLight
-        ? Colors.grey.withValues(alpha: 0.1)
-        : (isDark ? Colors.white.withValues(alpha: 0.1) : color.withValues(alpha: 0.08));
-
-    final borderColor = isLight
-        ? Colors.grey.withValues(alpha: 0.3)
-        : (isDark ? Colors.white.withValues(alpha: 0.3) : color.withValues(alpha: 0.15));
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: containerBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              backgroundColor: avatarBg,
-              radius: 11,
-              child: FaIcon(iconData, color: iconColor, size: 11),
-            ),
-            const SizedBox(width: 6),
-            Text(service.name, maxLines: 1, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            const SizedBox(width: 2),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _hexToColor(String? hex) {
-    if (hex == null || hex.isEmpty) return Colors.grey;
-    final buffer = StringBuffer();
-    if (hex.length == 6 || hex.length == 7) buffer.write('ff');
-    buffer.write(hex.replaceFirst('#', ''));
-    try {
-      return Color(int.parse(buffer.toString(), radix: 16));
-    } catch (e) {
-      return Colors.grey;
-    }
-  }
-}
+// _hexToColor is defined at the top-level.
 
 class _ServiceSelectionSheet extends StatefulWidget {
   final List<Service> services;
+  final List<dynamic> categories;
   final ValueChanged<Service> onSelected;
 
-  const _ServiceSelectionSheet({required this.services, required this.onSelected});
+  const _ServiceSelectionSheet({required this.services, required this.categories, required this.onSelected});
 
   @override
   State<_ServiceSelectionSheet> createState() => _ServiceSelectionSheetState();
@@ -683,79 +767,165 @@ class _ServiceSelectionSheetState extends State<_ServiceSelectionSheet> {
     });
   }
 
-  Color _hexToColor(String? hex) {
-    if (hex == null || hex.isEmpty) return Colors.grey;
-    final buffer = StringBuffer();
-    if (hex.length == 6 || hex.length == 7) buffer.write('ff');
-    buffer.write(hex.replaceFirst('#', ''));
-    try {
-      return Color(int.parse(buffer.toString(), radix: 16));
-    } catch (e) {
-      return Colors.grey;
+  Map<String, List<Service>> get _groupedServices {
+    final Map<String, List<Service>> groups = {};
+
+    // Internal mapping for sorting priority
+    final priority = {
+      'Mobil Operatörler': 0,
+      'İnternet Servis Sağlayıcıları': 1,
+      'Araçlar': 2,
+      'Dijital Platformlar': 3,
+      'Yapay Zeka': 4,
+      'Yazılım': 5,
+    };
+
+    // Sort categories based on priority, others at the end
+    final sortedCats = List.from(widget.categories);
+    sortedCats.sort((a, b) {
+      final aName = a['name'] as String;
+      final bName = b['name'] as String;
+      final aPrio = priority[aName] ?? 100;
+      final bPrio = priority[bName] ?? 100;
+      if (aPrio != bPrio) return aPrio.compareTo(bPrio);
+      return aName.compareTo(bName);
+    });
+
+    for (var cat in sortedCats) {
+      final catId = cat['id'] as String;
+      final catName = cat['name'] as String;
+      final catServices = _filteredServices.where((s) => s.categoryId == catId).toList();
+      if (catServices.isNotEmpty) {
+        groups[catName] = catServices;
+      }
     }
+
+    // Add uncategorized if they exist
+    final otherServices = _filteredServices.where((s) => s.categoryId == null).toList();
+    if (otherServices.isNotEmpty) {
+      groups['Diğer / Popüler'] = otherServices;
+    }
+
+    return groups;
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final grouped = _groupedServices;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          const SizedBox(height: 12),
           Container(
             width: 40,
             height: 4,
-            margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: Colors.grey.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Text('Servis Seç', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 20),
+          Text('Servis Seç', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+              ),
+              child: ListTile(
+                leading: Icon(Icons.add_circle_outline_rounded, color: theme.colorScheme.primary),
+                title: const Text('Özel Abonelik Oluştur', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                subtitle: const Text('Listede olmayan farklı bir servis ekle', style: TextStyle(fontSize: 12)),
+                onTap: () => widget.onSelected(Service(id: 'custom', name: 'Özel', iconName: 'plus')),
+                trailing: Icon(Icons.chevron_right_rounded, color: theme.colorScheme.primary),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _searchController,
-            onChanged: _filter,
-            decoration: InputDecoration(
-              hintText: 'Ara...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filter,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Servis Ara (Netflix, Turk Telekom, Spotify..)',
+                hintStyle: TextStyle(fontSize: 14, color: theme.hintColor),
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
             ),
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: ListView.separated(
-              itemCount: _filteredServices.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final service = _filteredServices[index];
-                var color = _hexToColor(service.color);
-                final iconData = IconHelper.getIcon(service.iconName);
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: grouped.length,
+              itemBuilder: (context, groupIndex) {
+                final groupName = grouped.keys.elementAt(groupIndex);
+                final services = grouped[groupName]!;
 
-                // Handle white/light colors specially for visibility
-                final isLight = color.computeLuminance() > 0.8;
-                final isDark = color.computeLuminance() < 0.1;
-
-                final avatarBg = isLight
-                    ? const Color(0xFF202124)
-                    : (isDark ? const Color(0xFFF1F3F4) : color.withValues(alpha: 0.15));
-
-                final iconColor = isLight ? Colors.white : (isDark ? Colors.black : color);
-
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: avatarBg,
-                    child: FaIcon(iconData, color: iconColor, size: 20),
-                  ),
-                  title: Text(service.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                  onTap: () => widget.onSelected(service),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                      child: Text(
+                        groupName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    ...services.map((service) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ListTile(
+                          leading: SizedBox(
+                            width: 24,
+                            height: 40,
+                            child: Center(
+                              child: Image.asset(
+                                'assets/services/${service.iconName}.png',
+                                width: 22,
+                                height: 22,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) => Image.asset(
+                                  'assets/categories/other.png',
+                                  width: 18,
+                                  height: 18,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Text(service.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                          onTap: () => widget.onSelected(service),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                      );
+                    }),
+                  ],
                 );
               },
             ),

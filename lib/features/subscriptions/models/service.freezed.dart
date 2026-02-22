@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Service {
 
- String get id; String get name;@JsonKey(name: 'icon_name') String? get iconName;@JsonKey(name: 'color') String? get color;@JsonKey(name: 'default_price') double? get defaultPrice;@JsonKey(name: 'category_id') String? get categoryId;
+ String get id; String get name;@JsonKey(name: 'icon_name') String? get iconName;@JsonKey(name: 'category_id') String? get categoryId;@JsonKey(name: 'default_billing_cycle') String? get defaultBillingCycle;
 /// Create a copy of Service
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ServiceCopyWith<Service> get copyWith => _$ServiceCopyWithImpl<Service>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Service&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.iconName, iconName) || other.iconName == iconName)&&(identical(other.color, color) || other.color == color)&&(identical(other.defaultPrice, defaultPrice) || other.defaultPrice == defaultPrice)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Service&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.iconName, iconName) || other.iconName == iconName)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.defaultBillingCycle, defaultBillingCycle) || other.defaultBillingCycle == defaultBillingCycle));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,iconName,color,defaultPrice,categoryId);
+int get hashCode => Object.hash(runtimeType,id,name,iconName,categoryId,defaultBillingCycle);
 
 @override
 String toString() {
-  return 'Service(id: $id, name: $name, iconName: $iconName, color: $color, defaultPrice: $defaultPrice, categoryId: $categoryId)';
+  return 'Service(id: $id, name: $name, iconName: $iconName, categoryId: $categoryId, defaultBillingCycle: $defaultBillingCycle)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ServiceCopyWith<$Res>  {
   factory $ServiceCopyWith(Service value, $Res Function(Service) _then) = _$ServiceCopyWithImpl;
 @useResult
 $Res call({
- String id, String name,@JsonKey(name: 'icon_name') String? iconName,@JsonKey(name: 'color') String? color,@JsonKey(name: 'default_price') double? defaultPrice,@JsonKey(name: 'category_id') String? categoryId
+ String id, String name,@JsonKey(name: 'icon_name') String? iconName,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'default_billing_cycle') String? defaultBillingCycle
 });
 
 
@@ -65,14 +65,13 @@ class _$ServiceCopyWithImpl<$Res>
 
 /// Create a copy of Service
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? iconName = freezed,Object? color = freezed,Object? defaultPrice = freezed,Object? categoryId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? iconName = freezed,Object? categoryId = freezed,Object? defaultBillingCycle = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,iconName: freezed == iconName ? _self.iconName : iconName // ignore: cast_nullable_to_non_nullable
-as String?,color: freezed == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
-as String?,defaultPrice: freezed == defaultPrice ? _self.defaultPrice : defaultPrice // ignore: cast_nullable_to_non_nullable
-as double?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,defaultBillingCycle: freezed == defaultBillingCycle ? _self.defaultBillingCycle : defaultBillingCycle // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -155,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name, @JsonKey(name: 'icon_name')  String? iconName, @JsonKey(name: 'color')  String? color, @JsonKey(name: 'default_price')  double? defaultPrice, @JsonKey(name: 'category_id')  String? categoryId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name, @JsonKey(name: 'icon_name')  String? iconName, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'default_billing_cycle')  String? defaultBillingCycle)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Service() when $default != null:
-return $default(_that.id,_that.name,_that.iconName,_that.color,_that.defaultPrice,_that.categoryId);case _:
+return $default(_that.id,_that.name,_that.iconName,_that.categoryId,_that.defaultBillingCycle);case _:
   return orElse();
 
 }
@@ -176,10 +175,10 @@ return $default(_that.id,_that.name,_that.iconName,_that.color,_that.defaultPric
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name, @JsonKey(name: 'icon_name')  String? iconName, @JsonKey(name: 'color')  String? color, @JsonKey(name: 'default_price')  double? defaultPrice, @JsonKey(name: 'category_id')  String? categoryId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name, @JsonKey(name: 'icon_name')  String? iconName, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'default_billing_cycle')  String? defaultBillingCycle)  $default,) {final _that = this;
 switch (_that) {
 case _Service():
-return $default(_that.id,_that.name,_that.iconName,_that.color,_that.defaultPrice,_that.categoryId);}
+return $default(_that.id,_that.name,_that.iconName,_that.categoryId,_that.defaultBillingCycle);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -193,10 +192,10 @@ return $default(_that.id,_that.name,_that.iconName,_that.color,_that.defaultPric
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name, @JsonKey(name: 'icon_name')  String? iconName, @JsonKey(name: 'color')  String? color, @JsonKey(name: 'default_price')  double? defaultPrice, @JsonKey(name: 'category_id')  String? categoryId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name, @JsonKey(name: 'icon_name')  String? iconName, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'default_billing_cycle')  String? defaultBillingCycle)?  $default,) {final _that = this;
 switch (_that) {
 case _Service() when $default != null:
-return $default(_that.id,_that.name,_that.iconName,_that.color,_that.defaultPrice,_that.categoryId);case _:
+return $default(_that.id,_that.name,_that.iconName,_that.categoryId,_that.defaultBillingCycle);case _:
   return null;
 
 }
@@ -208,15 +207,14 @@ return $default(_that.id,_that.name,_that.iconName,_that.color,_that.defaultPric
 @JsonSerializable()
 
 class _Service implements Service {
-  const _Service({required this.id, required this.name, @JsonKey(name: 'icon_name') this.iconName, @JsonKey(name: 'color') this.color, @JsonKey(name: 'default_price') this.defaultPrice, @JsonKey(name: 'category_id') this.categoryId});
+  const _Service({required this.id, required this.name, @JsonKey(name: 'icon_name') this.iconName, @JsonKey(name: 'category_id') this.categoryId, @JsonKey(name: 'default_billing_cycle') this.defaultBillingCycle});
   factory _Service.fromJson(Map<String, dynamic> json) => _$ServiceFromJson(json);
 
 @override final  String id;
 @override final  String name;
 @override@JsonKey(name: 'icon_name') final  String? iconName;
-@override@JsonKey(name: 'color') final  String? color;
-@override@JsonKey(name: 'default_price') final  double? defaultPrice;
 @override@JsonKey(name: 'category_id') final  String? categoryId;
+@override@JsonKey(name: 'default_billing_cycle') final  String? defaultBillingCycle;
 
 /// Create a copy of Service
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +229,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Service&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.iconName, iconName) || other.iconName == iconName)&&(identical(other.color, color) || other.color == color)&&(identical(other.defaultPrice, defaultPrice) || other.defaultPrice == defaultPrice)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Service&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.iconName, iconName) || other.iconName == iconName)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.defaultBillingCycle, defaultBillingCycle) || other.defaultBillingCycle == defaultBillingCycle));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,iconName,color,defaultPrice,categoryId);
+int get hashCode => Object.hash(runtimeType,id,name,iconName,categoryId,defaultBillingCycle);
 
 @override
 String toString() {
-  return 'Service(id: $id, name: $name, iconName: $iconName, color: $color, defaultPrice: $defaultPrice, categoryId: $categoryId)';
+  return 'Service(id: $id, name: $name, iconName: $iconName, categoryId: $categoryId, defaultBillingCycle: $defaultBillingCycle)';
 }
 
 
@@ -251,7 +249,7 @@ abstract mixin class _$ServiceCopyWith<$Res> implements $ServiceCopyWith<$Res> {
   factory _$ServiceCopyWith(_Service value, $Res Function(_Service) _then) = __$ServiceCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name,@JsonKey(name: 'icon_name') String? iconName,@JsonKey(name: 'color') String? color,@JsonKey(name: 'default_price') double? defaultPrice,@JsonKey(name: 'category_id') String? categoryId
+ String id, String name,@JsonKey(name: 'icon_name') String? iconName,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'default_billing_cycle') String? defaultBillingCycle
 });
 
 
@@ -268,14 +266,13 @@ class __$ServiceCopyWithImpl<$Res>
 
 /// Create a copy of Service
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? iconName = freezed,Object? color = freezed,Object? defaultPrice = freezed,Object? categoryId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? iconName = freezed,Object? categoryId = freezed,Object? defaultBillingCycle = freezed,}) {
   return _then(_Service(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,iconName: freezed == iconName ? _self.iconName : iconName // ignore: cast_nullable_to_non_nullable
-as String?,color: freezed == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
-as String?,defaultPrice: freezed == defaultPrice ? _self.defaultPrice : defaultPrice // ignore: cast_nullable_to_non_nullable
-as double?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,defaultBillingCycle: freezed == defaultBillingCycle ? _self.defaultBillingCycle : defaultBillingCycle // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

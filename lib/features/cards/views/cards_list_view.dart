@@ -159,9 +159,13 @@ class CardsListView extends ConsumerWidget {
                       );
                     },
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Icon(Icons.credit_card_rounded, color: theme.colorScheme.primary),
+                    leading: Image.asset(
+                      'assets/services/credit_card.png',
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.credit_card_rounded, size: 28, color: theme.colorScheme.primary),
                     ),
                     title: Text(
                       card.cardName,

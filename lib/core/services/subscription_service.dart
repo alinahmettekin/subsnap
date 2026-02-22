@@ -1,17 +1,17 @@
 ﻿import 'dart:async';
-import 'dart:developer';
+import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../utils/constants.dart';
 
 part 'subscription_service.g.dart';
 
 class SubscriptionService {
   static Future<void> init() async {
-    await Purchases.setLogLevel(LogLevel.debug);
+    // Only log errors in production for better performance
+    await Purchases.setLogLevel(LogLevel.error);
 
     PurchasesConfiguration configuration;
     if (Platform.isAndroid || Platform.isIOS) {
@@ -21,15 +21,8 @@ class SubscriptionService {
   }
 
   static bool checkPremium(CustomerInfo customerInfo) {
-    log('DEBUG: Checking premium status...');
-    log('DEBUG: Active entitlements: ${customerInfo.entitlements.active.keys}');
-    log('DEBUG: All entitlements: ${customerInfo.entitlements.all.keys}');
-
-    // Check for specific entitlement identifier provided by RevenueCat logs
-    // final isPremium = customerInfo.entitlements.active.containsKey(AppConstants.entitlementId);
-
-    log('DEBUG: Premium status: BYPASSED (FALSE)');
-    return true; // Force free version for testing
+    bool isPremium = customerInfo.entitlements.active.containsKey(AppConstants.entitlementId);
+    return isPremium;
   }
 
   static Future<bool> isPremium() async {
@@ -45,7 +38,7 @@ class SubscriptionService {
     try {
       await Purchases.logIn(userId);
     } catch (e) {
-      log('DEBUG: RevenueCat logIn failed: $e');
+      debugPrint('❌ RevenueCat logIn failed: $e');
     }
   }
 
@@ -57,8 +50,8 @@ class SubscriptionService {
           await launchUrl(url);
         }
       } else if (Platform.isAndroid) {
-        final packageInfo = await PackageInfo.fromPlatform();
-        final packageName = packageInfo.packageName;
+        // Hardcoded package name as we're removing package_info_plus
+        const packageName = 'com.aatstdio.subsnap';
         final Uri url = Uri.parse('https://play.google.com/store/account/subscriptions?package=$packageName');
         // Android intent might need mode: LaunchMode.externalApplication
         if (await canLaunchUrl(url)) {
@@ -66,7 +59,7 @@ class SubscriptionService {
         }
       }
     } catch (e) {
-      log('DEBUG: Failed to open subscription management: $e');
+      debugPrint('❌ Failed to open subscription management: $e');
     }
   }
 
@@ -75,11 +68,9 @@ class SubscriptionService {
       final isAnonymous = await Purchases.isAnonymous;
       if (!isAnonymous) {
         await Purchases.logOut();
-      } else {
-        log('DEBUG: RevenueCat user is already anonymous, skipping logOut');
       }
     } catch (e) {
-      log('DEBUG: RevenueCat logOut failed: $e');
+      debugPrint('❌ RevenueCat logOut failed: $e');
     }
   }
 }

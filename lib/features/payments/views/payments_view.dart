@@ -8,6 +8,8 @@ import '../services/payment_service.dart';
 import '../../subscriptions/views/widgets/subscription_icon.dart';
 import 'add_payment_view.dart';
 import '../../subscriptions/views/paywall_view.dart';
+import 'package:flutter/services.dart';
+import 'widgets/edit_payment_sheet.dart';
 
 class PaymentsView extends ConsumerWidget {
   const PaymentsView({super.key});
@@ -29,7 +31,7 @@ class PaymentsView extends ConsumerWidget {
         body: const TabBarView(children: [_PaymentsList(isHistory: false), _PaymentsList(isHistory: true)]),
         floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 100.0),
-          child: FloatingActionButton(
+          child: FloatingActionButton.extended(
             onPressed: () {
               final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
               if (!isPremium) {
@@ -43,9 +45,11 @@ class PaymentsView extends ConsumerWidget {
                 builder: (_) => const AddPaymentView(),
               );
             },
-            tooltip: 'Ödeme Ekle',
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimaryContainer),
+            elevation: 4,
+            icon: const Icon(Icons.add_circle_rounded, size: 24),
+            label: const Text('Ödeme Ekle', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.2)),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
           ),
         ),
       ),
@@ -105,9 +109,16 @@ class _PaymentsList extends ConsumerWidget {
                       final subscription = subscriptionMap[payment.subscriptionId];
                       final card = payment.cardId != null ? cardMap[payment.cardId] : null;
 
-                      // Only allow delete for history items (real DB records)
-                      // Upcoming items are generated from subscriptions
                       final canDelete = isHistory || !payment.id.startsWith('temp_');
+
+                      void _showEditPaymentSheet() {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => EditPaymentSheet(payment: payment, subscription: subscription),
+                        );
+                      }
 
                       final child = Card(
                         elevation: 0,
@@ -176,6 +187,7 @@ class _PaymentsList extends ConsumerWidget {
                               if (isHistory) const SizedBox(height: 0),
                             ],
                           ),
+                          onTap: isHistory ? _showEditPaymentSheet : null,
                         ),
                       );
 
