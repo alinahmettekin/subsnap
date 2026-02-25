@@ -1,1 +1,5 @@
 #include "Generated.xcconfig"
+#include? "../Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
+#include? "../Pods/Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"
+FRAMEWORK_SEARCH_PATHS = $(inherited) "$(PROJECT_DIR)/Flutter/ephemeral"
+HEADER_SEARCH_PATHS = $(inherited) "$(PROJECT_DIR)/Flutter/ephemeral/Flutter.framework/Headers"

@@ -46,6 +46,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_native_splash: ^2.4.7
+  webview_flutter: ^4.13.1
 
 dev_dependencies:
   flutter_test:
