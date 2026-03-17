@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,16 +11,26 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:subsnap/core/theme/theme_provider.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   // ... (same init logic)
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   try {
     await Future.wait([
       initializeDateFormatting('tr_TR', null),
-      Supabase.initialize(url: AppConstants.supabaseUrl, anonKey: AppConstants.supabaseAnonKey),
+      Supabase.initialize(
+        url: AppConstants.supabaseUrl,
+        anonKey: AppConstants.supabaseAnonKey,
+      ),
       SubscriptionService.init(),
     ]);
   } catch (e) {

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -52,6 +52,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   }
 
   Future<void> _selectStartDate() async {
+    FocusScope.of(context).unfocus();
     await showCustomDatePicker(
       context,
       initialDate: _startDate,
@@ -228,19 +229,21 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
     final servicesAsync = ref.watch(servicesProvider);
     final cardsAsync = ref.watch(cardsProvider);
 
-    return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Container(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               servicesAsync.when(
                 data: (services) {
                   final hasService = _selectedServiceId != null;
@@ -284,7 +287,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                 TextFormField(
                   controller: _nameController,
                   style: const TextStyle(fontWeight: FontWeight.w600),
-                  autofocus: true,
+                  autofocus: false,
                   decoration: _inputDecoration(
                     'Abonelik Adı',
                   ).copyWith(prefixIcon: const Icon(Icons.edit_note_rounded)),
@@ -302,7 +305,18 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                   suffixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$'))],
+                onChanged: (value) {
+                  if (value.contains(',')) {
+                    final newText = value.replaceAll(',', '.');
+                    _priceController.value = _priceController.value.copyWith(
+                      text: newText,
+                      selection: TextSelection.collapsed(offset: newText.length),
+                    );
+                  }
+                },
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}')),
+                ],
                 validator: (v) => v == null || v.isEmpty ? 'Gerekli' : null,
               ),
               const SizedBox(height: 12),
@@ -410,15 +424,16 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                     : const Icon(Icons.add_rounded),
                 label: Text(_isLoading ? 'Ekleniyor...' : 'Ekle'),
               ),
-              const SizedBox(height: 32),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showServiceSelectionSheet(List<dynamic>? categories, List<Service> services) {
+    FocusScope.of(context).unfocus();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -446,6 +461,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                 }
               }
             });
+            FocusScope.of(context).requestFocus(FocusNode());
             Navigator.pop(context);
           },
         ),
@@ -510,6 +526,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   }
 
   void _showBillingCycleSheet() {
+    FocusScope.of(context).unfocus();
     final cycles = {
       'weekly': 'Haftalık',
       'monthly': 'Aylık',
@@ -529,6 +546,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
               _billingCycle = e.key;
               _calculateNextBillingDate();
             });
+            FocusScope.of(context).requestFocus(FocusNode());
             Navigator.pop(context);
           },
         );
@@ -537,6 +555,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   }
 
   void _showCardSheet(List<PaymentCard> cards) {
+    FocusScope.of(context).unfocus();
     final theme = Theme.of(context);
     _showModernSheet(
       title: 'Ödeme Yöntemi Seç',
@@ -548,6 +567,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
             prefix: Image.asset('assets/services/credit_card.png', width: 20, height: 20, fit: BoxFit.contain),
             onTap: () {
               setState(() => _selectedCardId = c.id);
+              FocusScope.of(context).requestFocus(FocusNode());
               Navigator.pop(context);
             },
           );
@@ -558,6 +578,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
           prefix: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
           onTap: () {
             setState(() => _selectedCardId = null);
+            FocusScope.of(context).requestFocus(FocusNode());
             Navigator.pop(context);
           },
         ),
@@ -589,6 +610,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   }
 
   void _showCategorySheet(List<dynamic> cats) {
+    FocusScope.of(context).unfocus();
     _showModernSheet(
       title: 'Kategori Seç',
       children: cats.map((c) {
@@ -605,6 +627,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
           ),
           onTap: () {
             setState(() => _selectedCategoryId = c['id'] as String);
+            FocusScope.of(context).requestFocus(FocusNode());
             Navigator.pop(context);
           },
         );
@@ -858,7 +881,7 @@ class _ServiceSelectionSheetState extends State<_ServiceSelectionSheet> {
             child: TextField(
               controller: _searchController,
               onChanged: _filter,
-              autofocus: true,
+              autofocus: false,
               decoration: InputDecoration(
                 hintText: 'Servis Ara (Netflix, Turk Telekom, Spotify..)',
                 hintStyle: TextStyle(fontSize: 14, color: theme.hintColor),

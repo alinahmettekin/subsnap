@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -13,6 +15,7 @@
 			<array>
 				<!-- TODO: Buraya GoogleService-Info.plist dosyasındaki REVERSED_CLIENT_ID değerini yapıştırın -->
 				<string>com.googleusercontent.apps.1094968780176-eeqf8gpd532eiduqbaucbitiq4c8ojbm</string>
+				<string>io.supabase.subsnap</string>
 			</array>
 		</dict>
 	</array>
@@ -70,15 +73,11 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 </dict>
 </plist>

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:crypto/crypto.dart';
 import '../utils/constants.dart';
 import 'subscription_service.dart';
 
@@ -108,6 +110,46 @@ class AuthService {
       }
 
       throw 'Bir hata oluştu (${e.runtimeType}): $e';
+    }
+  }
+
+  Future<void> signInWithApple() async {
+    log('DEBUG: Starting Apple Sign-In sequence');
+    try {
+      final rawNonce = _client.auth.generateRawNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw 'Apple identity token alınamadı.';
+      }
+
+      log('DEBUG: idToken obtained from Apple');
+      _logJwtDebug(idToken);
+
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+
+      log('DEBUG: Supabase sign-in successful with Apple');
+    } catch (e) {
+      log('CRITICAL: Apple Sign-In error: $e');
+      if (e is SignInWithAppleAuthorizationException) {
+        if (e.code == AuthorizationErrorCode.canceled) {
+          throw 'Giriş işlemi iptal edildi.';
+        }
+      }
+      throw 'Apple ile giriş yapılamadı: $e';
     }
   }
 
