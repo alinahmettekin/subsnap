@@ -1,4 +1,4 @@
-﻿import 'dart:developer';
+import 'dart:developer';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -94,20 +94,20 @@ class AuthService {
         throw 'Giriş işlemi iptal edildi.';
       }
 
-      throw 'Play hizmetleri ile ilgili bir hata oldu.';
+      log('ERROR: Google Sign-In failed with code ${e.code}');
+      throw 'Google ile giriş yapılamadı: ${e.message ?? e.code}';
     } catch (e, stack) {
       log('CRITICAL: General Google Sign-In error details: $e');
       log('Stacktrace: $stack');
 
       final errorStr = e.toString();
-      // Check for specific Supabase/Google Auth errors
       if (errorStr.contains('AuthApiException') ||
           errorStr.contains('Bad ID token') ||
           errorStr.contains('Google idToken alınamadı')) {
-        throw 'Play hizmetleri ile ilgili bir hata oldu.';
+        throw 'Kimlik doğrulama hatası oluştu: $e';
       }
 
-      rethrow;
+      throw 'Bir hata oluştu (${e.runtimeType}): $e';
     }
   }
 

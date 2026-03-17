@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,8 +14,11 @@ class SubscriptionService {
     await Purchases.setLogLevel(LogLevel.error);
 
     PurchasesConfiguration configuration;
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (Platform.isAndroid) {
       configuration = PurchasesConfiguration(AppConstants.revenueCatApiKey);
+      await Purchases.configure(configuration);
+    } else if (Platform.isIOS) {
+      configuration = PurchasesConfiguration(AppConstants.revenueCatAppleApiKey);
       await Purchases.configure(configuration);
     }
   }
