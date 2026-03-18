@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,12 +13,23 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:subsnap/core/theme/theme_provider.dart';
-import 'package:flutter/services.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  // ... (same init logic)
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Supabase'in deep link hatalarının uygulamayı çöktürmemesi için global handler
+  FlutterError.onError = (FlutterErrorDetails details) {
+    debugPrint('Flutter error caught: ${details.exception}');
+    // Log et ama çöktürme
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Unhandled error caught: $error');
+    return true; // true döndürmek uygulamanın crash etmesini önler
+  };
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -51,6 +64,7 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeSettingsProvider);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'SubSnap',
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

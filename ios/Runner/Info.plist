@@ -15,6 +15,7 @@
 			<array>
 				<!-- TODO: Buraya GoogleService-Info.plist dosyasındaki REVERSED_CLIENT_ID değerini yapıştırın -->
 				<string>com.googleusercontent.apps.1094968780176-eeqf8gpd532eiduqbaucbitiq4c8ojbm</string>
+				<string>com.aatstdio.subsnap</string>
 				<string>io.supabase.subsnap</string>
 			</array>
 		</dict>

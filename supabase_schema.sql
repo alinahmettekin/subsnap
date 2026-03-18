@@ -393,3 +393,30 @@ BEGIN
         default_billing_cycle = EXCLUDED.default_billing_cycle,
         icon_name = EXCLUDED.icon_name;
 END $$;
+
+-- 8. Storage Policies (subsnap bucket)
+-- Note: You must create the 'subsnap' bucket manually in the Supabase Dashboard
+-- or via API before these policies can be applied if running on a fresh DB.
+
+DROP POLICY IF EXISTS "Public Read Access" ON storage.objects;
+CREATE POLICY "Public Read Access"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'subsnap');
+
+DROP POLICY IF EXISTS "Authenticated Upload Access" ON storage.objects;
+CREATE POLICY "Authenticated Upload Access"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'subsnap');
+
+DROP POLICY IF EXISTS "Authenticated Update Access" ON storage.objects;
+CREATE POLICY "Authenticated Update Access"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'subsnap');
+
+DROP POLICY IF EXISTS "Authenticated Delete Access" ON storage.objects;
+CREATE POLICY "Authenticated Delete Access"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'subsnap');

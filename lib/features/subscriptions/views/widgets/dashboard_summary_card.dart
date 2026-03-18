@@ -12,9 +12,27 @@ class DashboardSummaryCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     final total = subscriptions.fold(0.0, (sum, item) {
-      if (item.billingCycle == 'monthly') return sum + item.price;
-      if (item.billingCycle == 'yearly') return sum + (item.price / 12);
-      return sum;
+      double monthlyPrice = 0.0;
+      switch (item.billingCycle) {
+        case 'weekly':
+          monthlyPrice = item.price * 4.3452425; // average weeks in a month
+          break;
+        case 'monthly':
+          monthlyPrice = item.price;
+          break;
+        case '3_months':
+          monthlyPrice = item.price / 3;
+          break;
+        case '6_months':
+          monthlyPrice = item.price / 6;
+          break;
+        case 'yearly':
+          monthlyPrice = item.price / 12;
+          break;
+        default:
+          monthlyPrice = item.price;
+      }
+      return sum + monthlyPrice;
     });
 
     final nextBill = subscriptions.isNotEmpty

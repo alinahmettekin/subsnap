@@ -54,7 +54,7 @@ class SubscriptionListItem extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        subscription.billingCycle == 'monthly' ? 'Aylık' : 'Yıllık',
+                        _getBillingCycleText(),
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
@@ -135,5 +135,24 @@ class SubscriptionListItem extends StatelessWidget {
     if (difference < 3) return theme.colorScheme.error;
     if (difference < 7) return theme.colorScheme.tertiary;
     return theme.colorScheme.secondary;
+  }
+
+  String _getBillingCycleText() {
+    switch (subscription.billingCycle) {
+      case 'weekly':
+        return 'Haftalık';
+      case 'monthly':
+        return 'Aylık';
+      case '3_months':
+        return '3 Aylık';
+      case '6_months':
+        return '6 Aylık';
+      case 'yearly':
+        return 'Yıllık';
+      case 'custom':
+        return 'Özel';
+      default:
+        return subscription.billingCycle;
+    }
   }
 }

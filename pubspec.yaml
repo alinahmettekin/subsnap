@@ -1,7 +1,7 @@
 name: subsnap
 description: "A new Flutter project."
 publish_to: 'none' 
-version: 1.0.7+107
+version: 1.0.8+108
 
 environment:
   sdk: ^3.10.7
@@ -48,6 +48,8 @@ dependencies:
   flutter_native_splash: ^2.4.7
   sign_in_with_apple: ^7.0.1
   crypto: ^3.0.7
+  image_picker: ^1.2.1
+  app_links: ^6.4.1
 
 dev_dependencies:
   flutter_test:

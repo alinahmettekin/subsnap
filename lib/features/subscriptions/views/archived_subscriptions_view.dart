@@ -103,6 +103,25 @@ class ArchivedSubscriptionsView extends ConsumerWidget {
     );
   }
 
+  String _getBillingCycleText(String cycle) {
+    switch (cycle) {
+      case 'weekly':
+        return 'Haftalık';
+      case 'monthly':
+        return 'Aylık';
+      case '3_months':
+        return '3 Aylık';
+      case '6_months':
+        return '6 Aylık';
+      case 'yearly':
+        return 'Yıllık';
+      case 'custom':
+        return 'Özel';
+      default:
+        return cycle;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final archivedAsync = ref.watch(archivedSubscriptionsProvider);
@@ -147,7 +166,7 @@ class ArchivedSubscriptionsView extends ConsumerWidget {
                     style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey),
                   ),
                   subtitle: Text(
-                    '${sub.price} ${sub.currency} • ${sub.billingCycle}',
+                    '${sub.price} ${sub.currency} • ${_getBillingCycleText(sub.billingCycle)}',
                     style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   ),
                   trailing: Row(

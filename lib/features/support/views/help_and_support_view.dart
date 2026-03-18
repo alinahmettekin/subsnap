@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/support_service.dart';
+import '../../subscriptions/views/paywall_view.dart';
 
 class HelpAndSupportView extends ConsumerStatefulWidget {
   const HelpAndSupportView({super.key});
@@ -106,10 +107,10 @@ class _HelpAndSupportViewState extends ConsumerState<HelpAndSupportView> {
               'Ödemelerim neden görünmüyor?',
               'Ödemeleriniz, abonelik tarihine göre otomatik hesaplanır. Eğer manuel bir ödeme yaptıysanız "Ödemeler" sayfasından ekleyebilirsiniz.',
             ),
-            _buildFAQItem(
-              'faq3',
+            _buildFAQActionItem(
               'Premium özellikler nelerdir?',
-              'Sınırsız kart ekleme, detaylı harcama analizleri ve bulut senkronizasyonu gibi özellikler Premium paketimizde mevcuttur.',
+              icon: Icons.workspace_premium_rounded,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView())),
             ),
             const SizedBox(height: 32),
             Text('İstek ve Öneriler', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -118,9 +119,6 @@ class _HelpAndSupportViewState extends ConsumerState<HelpAndSupportView> {
             const SizedBox(height: 16),
             _buildFeedbackForm('feedback', theme),
             const SizedBox(height: 32),
-            Center(
-              child: Text('SubSnap v1.0.0', style: textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-            ),
           ],
         ),
       ),
@@ -145,6 +143,20 @@ class _HelpAndSupportViewState extends ConsumerState<HelpAndSupportView> {
         },
         title: Text(question, style: const TextStyle(fontWeight: FontWeight.w600)),
         children: [Padding(padding: const EdgeInsets.all(16.0), child: Text(answer))],
+      ),
+    );
+  }
+
+  Widget _buildFAQActionItem(String question, {required IconData icon, required VoidCallback onTap}) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        onTap: onTap,
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+        title: Text(question, style: const TextStyle(fontWeight: FontWeight.w600)),
+        trailing: const Icon(Icons.chevron_right_rounded),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

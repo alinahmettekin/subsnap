@@ -31,7 +31,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="io.supabase.subsnap" android:host="login" />
+                <data android:scheme="io.supabase.subsnap" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

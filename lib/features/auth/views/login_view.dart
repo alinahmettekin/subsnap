@@ -13,11 +13,15 @@ class LoginView extends ConsumerStatefulWidget {
 }
 
 class _LoginViewState extends ConsumerState<LoginView> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
     setState(() => _isLoading = true);
     try {
       await ref.read(authServiceProvider).signInWithPassword(_emailController.text.trim(), _passwordController.text);
@@ -26,9 +30,18 @@ class _LoginViewState extends ConsumerState<LoginView> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+      if (mounted) {
+        final errorMsg = AuthService.translateError(e);
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -55,18 +68,52 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 const SizedBox(height: 8),
                 const Text('Aboneliklerini tek yerden yönet', textAlign: TextAlign.center),
                 const SizedBox(height: 48),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'E-posta', prefixIcon: Icon(Icons.email_outlined)),
-                  keyboardType: TextInputType.emailAddress,
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'E-posta',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Lütfen e-posta girin.';
+                          if (!value.contains('@')) return 'Geçersiz e-posta formatı.';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Şifre',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                        ),
+                        obscureText: _obscurePassword,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Lütfen şifre girin.';
+                          if (value.length < 6) return 'Şifre en az 6 karakter olmalıdır.';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isLoading ? null : _forgotPassword,
+                    child: const Text('Şifremi Unuttum'),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Şifre', prefixIcon: Icon(Icons.lock_outline)),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 24),
                 FilledButton(
                   onPressed: _isLoading ? null : _login,
                   style: FilledButton.styleFrom(
@@ -153,6 +200,39 @@ class _LoginViewState extends ConsumerState<LoginView> {
     );
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sıfırlama bağlantısını göndermek için lütfen geçerli bir e-posta adresi girin.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authServiceProvider).resetPasswordForEmail(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorMsg = AuthService.translateError(e);
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _loginWithGoogle() async {
     setState(() => _isLoading = true);
     try {
@@ -163,7 +243,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+        final errorMsg = AuthService.translateError(e);
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -182,7 +267,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+        final errorMsg = AuthService.translateError(e);
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
       }
     } finally {
       if (mounted) {

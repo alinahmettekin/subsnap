@@ -15,6 +15,42 @@ final authServiceProvider = Provider((ref) => AuthService());
 class AuthService {
   final _client = Supabase.instance.client;
 
+  static String? translateError(dynamic error) {
+    if (error is AuthException) {
+      final message = error.message.toLowerCase();
+
+      if (message.contains('invalid login credentials')) {
+        return 'E-posta veya şifre hatalı.';
+      } else if (message.contains('user not found')) {
+        return 'Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.';
+      } else if (message.contains('email not confirmed')) {
+        return 'Lütfen e-posta adresinizi doğrulayın.';
+      } else if (message.contains('rate limit') || message.contains('email rate limit')) {
+        return 'Çok fazla deneme yaptınız veya e-posta gönderildi. Lütfen bir süre sonra tekrar deneyin.';
+      } else if (message.contains('network') || message.contains('connection')) {
+        return 'İnternet bağlantınızı kontrol edin.';
+      } else if (message.contains('missing email') || message.contains('validation_failed')) {
+        return 'Lütfen geçerli bir e-posta ve şifre girin.';
+      } else if (message.contains('user already registered')) {
+        return 'Bu e-posta adresi zaten kayıtlı.';
+      } else if (message.contains('weak password')) {
+        return 'Şifreniz çok zayıf. En az 6 karakter kullanmalısınız.';
+      }
+
+      return 'Bir hata oluştu: ${error.message}';
+    }
+    
+    final errorStr = error.toString().toLowerCase();
+    if (errorStr.contains('canceled') || 
+        errorStr.contains('cancelled') || 
+        errorStr.contains('sign_in_canceled') ||
+        errorStr.contains('iptal')) {
+      return null;
+    }
+    
+    return 'Hata: $error';
+  }
+
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
   User? get currentUser => _client.auth.currentUser;
 
@@ -23,7 +59,11 @@ class AuthService {
   }
 
   Future<void> signUp(String email, String password, String fullName) async {
-    await _client.auth.signUp(email: email, password: password, data: {'full_name': fullName});
+    await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {'full_name': fullName},
+    );
   }
 
   Future<void> signUpWithPassword(String email, String password) async {
@@ -53,7 +93,9 @@ class AuthService {
       // Initialize with serverClientId
       // Note: scopes are configured via Google Cloud Console or defaults (email, profile)
       await googleSignIn.initialize(serverClientId: webClientId);
-      log('DEBUG: Attempting Google authentication with initialized instance...');
+      log(
+        'DEBUG: Attempting Google authentication with initialized instance...',
+      );
 
       // Use authenticate() as signIn() is deprecated/removed in v7
       final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
@@ -69,7 +111,9 @@ class AuthService {
       final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
 
-      log('DEBUG: idToken obtained: ${idToken != null ? "YES (Length: ${idToken.length})" : "NO"}');
+      log(
+        'DEBUG: idToken obtained: ${idToken != null ? "YES (Length: ${idToken.length})" : "NO"}',
+      );
 
       if (idToken == null) {
         throw 'Google idToken alınamadı.';
@@ -80,7 +124,10 @@ class AuthService {
       log('DEBUG: Signing in to Supabase with idToken');
       // Supabase signInWithIdToken usually requires idToken.
 
-      final response = await _client.auth.signInWithIdToken(provider: OAuthProvider.google, idToken: idToken);
+      final response = await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
 
       log('DEBUG: Supabase sign-in response User ID: ${response.user?.id}');
     } on PlatformException catch (e, stack) {
@@ -155,12 +202,41 @@ class AuthService {
 
   Future<void> deleteAccount() async {
     try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId != null) {
+        // Clean up storage objects first (since function lacks permissons)
+        try {
+          final List<FileObject> objects = await _client.storage.from('subsnap').list(path: 'avatars');
+          final userFiles =
+              objects.where((obj) => obj.name.startsWith(userId)).map((obj) => 'avatars/${obj.name}').toList();
+
+          if (userFiles.isNotEmpty) {
+            await _client.storage.from('subsnap').remove(userFiles);
+          }
+        } catch (e) {
+          log('DEBUG: Error cleaning up avatars during account delete: $e');
+        }
+      }
+
       await _client.rpc('delete_user_account');
       await signOut();
     } catch (e) {
       log('Error deleting account: $e');
       rethrow;
     }
+  }
+
+  Future<void> resetPasswordForEmail(String email) async {
+    await _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'io.supabase.subsnap://reset-password',
+    );
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    await _client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
   }
 
   void _logJwtDebug(String token) {
@@ -188,8 +264,12 @@ class AuthService {
       log('DEBUG: --- JWT ANALYSIS ---');
       log('DEBUG: AUD (Audience): ${payloadMap['aud']}');
       log('DEBUG: ISS (Issuer):   ${payloadMap['iss']}');
-      log('DEBUG: IAT (Issued At): ${DateTime.fromMillisecondsSinceEpoch((payloadMap['iat'] as int) * 1000)}');
-      log('DEBUG: EXP (Expiration): ${DateTime.fromMillisecondsSinceEpoch((payloadMap['exp'] as int) * 1000)}');
+      log(
+        'DEBUG: IAT (Issued At): ${DateTime.fromMillisecondsSinceEpoch((payloadMap['iat'] as int) * 1000)}',
+      );
+      log(
+        'DEBUG: EXP (Expiration): ${DateTime.fromMillisecondsSinceEpoch((payloadMap['exp'] as int) * 1000)}',
+      );
       log('DEBUG: ---------------------');
     } catch (e) {
       log('DEBUG: Could not decode JWT for debug: $e');

@@ -16,11 +16,14 @@ class SignUpView extends ConsumerStatefulWidget {
 
 class _SignUpViewState extends ConsumerState<SignUpView>
     with WidgetsBindingObserver {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
   bool _isSuccess = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void initState() {
@@ -53,19 +56,7 @@ class _SignUpViewState extends ConsumerState<SignUpView>
   }
 
   Future<void> _signUp() async {
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Şifreler eşleşmiyor')));
-      return;
-    }
-
-    if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Şifre en az 6 karakter olmalı')),
-      );
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isLoading = true);
     try {
@@ -80,9 +71,12 @@ class _SignUpViewState extends ConsumerState<SignUpView>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+        final errorMsg = AuthService.translateError(e);
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -100,9 +94,12 @@ class _SignUpViewState extends ConsumerState<SignUpView>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+        final errorMsg = AuthService.translateError(e);
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -120,9 +117,12 @@ class _SignUpViewState extends ConsumerState<SignUpView>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+        final errorMsg = AuthService.translateError(e);
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -233,32 +233,62 @@ class _SignUpViewState extends ConsumerState<SignUpView>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 48),
-          TextField(
-            controller: _emailController,
-            decoration: const InputDecoration(
-              labelText: 'E-posta',
-              prefixIcon: Icon(Icons.email_outlined),
+          Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'E-posta',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Lütfen e-posta girin.';
+                    if (!value.contains('@')) return 'Geçersiz e-posta formatı.';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Şifre',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    helperText: 'En az 6 karakter',
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                  ),
+                  obscureText: _obscurePassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Lütfen şifre girin.';
+                    if (value.length < 6) return 'Şifre en az 6 karakter olmalıdır.';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Şifre Tekrar',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    ),
+                  ),
+                  obscureText: _obscureConfirmPassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Lütfen şifreyi onaylayın.';
+                    if (value != _passwordController.text) return 'Şifreler eşleşmiyor.';
+                    return null;
+                  },
+                ),
+              ],
             ),
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _passwordController,
-            decoration: const InputDecoration(
-              labelText: 'Şifre',
-              prefixIcon: Icon(Icons.lock_outline),
-              helperText: 'En az 6 karakter',
-            ),
-            obscureText: true,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _confirmPasswordController,
-            decoration: const InputDecoration(
-              labelText: 'Şifre Tekrar',
-              prefixIcon: Icon(Icons.lock_outline),
-            ),
-            obscureText: true,
           ),
           const SizedBox(height: 32),
           FilledButton(

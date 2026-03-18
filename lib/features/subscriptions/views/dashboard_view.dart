@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/subscription_provider.dart';
@@ -293,9 +293,27 @@ class DashboardView extends ConsumerWidget {
 
   Widget _buildSummaryCard(BuildContext context, List<Subscription> subs) {
     final total = subs.fold(0.0, (sum, item) {
-      if (item.billingCycle == 'monthly') return sum + item.price;
-      if (item.billingCycle == 'yearly') return sum + (item.price / 12);
-      return sum;
+      double monthlyPrice = 0.0;
+      switch (item.billingCycle) {
+        case 'weekly':
+          monthlyPrice = item.price * 4.3452425;
+          break;
+        case 'monthly':
+          monthlyPrice = item.price;
+          break;
+        case '3_months':
+          monthlyPrice = item.price / 3;
+          break;
+        case '6_months':
+          monthlyPrice = item.price / 6;
+          break;
+        case 'yearly':
+          monthlyPrice = item.price / 12;
+          break;
+        default:
+          monthlyPrice = item.price;
+      }
+      return sum + monthlyPrice;
     });
 
     final theme = Theme.of(context);
@@ -444,7 +462,7 @@ class _SubscriptionListTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        subscription.billingCycle == 'monthly' ? 'Aylık' : 'Yıllık',
+                        _getBillingCycleText(subscription.billingCycle),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onSecondaryContainer,
                           fontWeight: FontWeight.w600,
@@ -460,5 +478,24 @@ class _SubscriptionListTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getBillingCycleText(String cycle) {
+    switch (cycle) {
+      case 'weekly':
+        return 'Haftalık';
+      case 'monthly':
+        return 'Aylık';
+      case '3_months':
+        return '3 Aylık';
+      case '6_months':
+        return '6 Aylık';
+      case 'yearly':
+        return 'Yıllık';
+      case 'custom':
+        return 'Özel';
+      default:
+        return cycle;
+    }
   }
 }

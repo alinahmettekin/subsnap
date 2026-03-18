@@ -106,6 +106,11 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
       return;
     }
 
+    if (_selectedServiceId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen bir servis veya "Özel" seçin')));
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     // Check subscription limit
@@ -291,7 +296,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                   decoration: _inputDecoration(
                     'Abonelik Adı',
                   ).copyWith(prefixIcon: const Icon(Icons.edit_note_rounded)),
-                  validator: (v) => v?.isEmpty ?? true ? 'Zorunlu' : null,
+                  validator: (v) => v?.trim().isEmpty ?? true ? 'Zorunlu' : null,
                 ),
               ],
               const SizedBox(height: 12),

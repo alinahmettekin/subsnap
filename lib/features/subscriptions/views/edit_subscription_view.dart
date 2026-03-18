@@ -209,7 +209,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
               TextFormField(
                 controller: _nameController,
                 decoration: _inputDecoration('Abonelik Adı'),
-                validator: (v) => v == null || v.isEmpty ? 'Lütfen bir ad girin' : null,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Lütfen bir ad girin' : null,
                 enabled: _selectedServiceId == null,
                 onChanged: (_) => setState(() {}),
               ),
