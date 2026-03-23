@@ -33,7 +33,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
   DateTime _nextBillingDate = DateTime.now();
   DateTime _startDate = DateTime.now();
   String? _selectedCategoryId;
-  String? _selectedServiceId;
+  String? _selectedServiceId = 'custom';
   String? _selectedCardId;
   bool _isLoading = false;
 
@@ -99,6 +99,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
 
   Future<void> _submit() async {
     debugPrint('DEBUG: _submit called');
+    FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
       debugPrint('DEBUG: Validation failed');
@@ -235,9 +236,15 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
     final cardsAsync = ref.watch(cardsProvider);
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => FocusScope.of(context).unfocus(),
       child: Container(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 24,
+          top: 24,
+          left: 24,
+          right: 24,
+        ),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -466,7 +473,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
                 }
               }
             });
-            FocusScope.of(context).requestFocus(FocusNode());
+            FocusScope.of(context).unfocus();
             Navigator.pop(context);
           },
         ),
@@ -551,7 +558,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
               _billingCycle = e.key;
               _calculateNextBillingDate();
             });
-            FocusScope.of(context).requestFocus(FocusNode());
+            FocusScope.of(context).unfocus();
             Navigator.pop(context);
           },
         );
@@ -572,7 +579,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
             prefix: Image.asset('assets/services/credit_card.png', width: 20, height: 20, fit: BoxFit.contain),
             onTap: () {
               setState(() => _selectedCardId = c.id);
-              FocusScope.of(context).requestFocus(FocusNode());
+              FocusScope.of(context).unfocus();
               Navigator.pop(context);
             },
           );
@@ -583,7 +590,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
           prefix: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
           onTap: () {
             setState(() => _selectedCardId = null);
-            FocusScope.of(context).requestFocus(FocusNode());
+            FocusScope.of(context).unfocus();
             Navigator.pop(context);
           },
         ),
@@ -632,7 +639,7 @@ class _AddSubscriptionViewState extends ConsumerState<AddSubscriptionView> {
           ),
           onTap: () {
             setState(() => _selectedCategoryId = c['id'] as String);
-            FocusScope.of(context).requestFocus(FocusNode());
+            FocusScope.of(context).unfocus();
             Navigator.pop(context);
           },
         );

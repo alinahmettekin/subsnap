@@ -188,7 +188,12 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     final cardsAsync = ref.watch(allCardsProvider);
 
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 24,
+        top: 24,
+        left: 24,
+        right: 24,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),

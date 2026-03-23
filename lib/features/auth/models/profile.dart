@@ -2,13 +2,13 @@ class UserProfile {
   final String id;
   final String? fullName;
   final String? avatarUrl;
-  final bool isPremium;
+  final bool isSpecialPremium;
 
   UserProfile({
     required this.id,
     this.fullName,
     this.avatarUrl,
-    this.isPremium = false,
+    this.isSpecialPremium = false,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -16,7 +16,7 @@ class UserProfile {
       id: json['id'],
       fullName: json['full_name'],
       avatarUrl: json['avatar_url'],
-      isPremium: json['is_premium'] ?? false,
+      isSpecialPremium: json['is_special_remium'] ?? false,
     );
   }
 
@@ -25,21 +25,21 @@ class UserProfile {
       'id': id,
       'full_name': fullName,
       'avatar_url': avatarUrl,
-      'is_premium': isPremium,
+      'is_special_remium': isSpecialPremium,
     };
   }
 
   UserProfile copyWith({
     String? fullName,
     String? avatarUrl,
-    bool? isPremium,
+    bool? isSpecialPremium,
     bool clearAvatar = false,
   }) {
     return UserProfile(
       id: id,
       fullName: fullName ?? this.fullName,
       avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
-      isPremium: isPremium ?? this.isPremium,
+      isSpecialPremium: isSpecialPremium ?? this.isSpecialPremium,
     );
   }
 

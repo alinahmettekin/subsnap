@@ -15,7 +15,7 @@ class DashboardSummaryCard extends StatelessWidget {
       double monthlyPrice = 0.0;
       switch (item.billingCycle) {
         case 'weekly':
-          monthlyPrice = item.price * 4.3452425; // average weeks in a month
+          monthlyPrice = item.price * 4; // 4 weeks in a month
           break;
         case 'monthly':
           monthlyPrice = item.price;

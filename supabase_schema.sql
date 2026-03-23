@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     full_name TEXT,
     avatar_url TEXT,
+    is_special_remium BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -176,8 +177,8 @@ CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments FOR EACH ROW
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, full_name, avatar_url)
-    VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'avatar_url');
+    INSERT INTO public.profiles (id, full_name, avatar_url, is_special_remium)
+    VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'avatar_url', FALSE);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

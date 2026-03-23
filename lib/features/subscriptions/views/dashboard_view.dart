@@ -296,7 +296,7 @@ class DashboardView extends ConsumerWidget {
       double monthlyPrice = 0.0;
       switch (item.billingCycle) {
         case 'weekly':
-          monthlyPrice = item.price * 4.3452425;
+          monthlyPrice = item.price * 4;
           break;
         case 'monthly':
           monthlyPrice = item.price;

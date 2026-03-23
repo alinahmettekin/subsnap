@@ -6,6 +6,8 @@ import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
 
+import '../../features/auth/providers/profile_provider.dart';
+
 part 'subscription_service.g.dart';
 
 class SubscriptionService {
@@ -82,17 +84,26 @@ class SubscriptionService {
 Stream<bool> isPremium(Ref ref) {
   final controller = StreamController<bool>();
 
-  // Add initial state
-  SubscriptionService.isPremium().then((value) {
-    if (!controller.isClosed) controller.add(value);
+  // Watch DB profile premium status
+  final userProfile = ref.watch(userProfileProvider).value;
+  final dbPremium = userProfile?.isSpecialPremium ?? false;
+
+  // Function to determine final premium status
+  bool getFinalPremium(bool rcPremium) => dbPremium || rcPremium;
+
+  // Initial check from RevenueCat
+  SubscriptionService.isPremium().then((rcValue) {
+    if (!controller.isClosed) controller.add(getFinalPremium(rcValue));
   });
 
-  // Listen for updates from RevenueCat
-  Purchases.addCustomerInfoUpdateListener((customerInfo) {
+  // Listen for RevenueCat updates
+  void listener(CustomerInfo customerInfo) {
     if (!controller.isClosed) {
-      controller.add(SubscriptionService.checkPremium(customerInfo));
+      controller.add(getFinalPremium(SubscriptionService.checkPremium(customerInfo)));
     }
-  });
+  }
+  
+  Purchases.addCustomerInfoUpdateListener(listener);
 
   ref.onDispose(() {
     controller.close();
