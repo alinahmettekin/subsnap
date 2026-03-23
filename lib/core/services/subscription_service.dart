@@ -13,7 +13,7 @@ part 'subscription_service.g.dart';
 class SubscriptionService {
   static Future<void> init() async {
     // Only log errors in production for better performance
-    await Purchases.setLogLevel(LogLevel.error);
+    await Purchases.setLogLevel(LogLevel.debug);
 
     PurchasesConfiguration configuration;
     if (Platform.isAndroid) {
