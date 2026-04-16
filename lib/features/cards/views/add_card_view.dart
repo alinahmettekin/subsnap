@@ -22,6 +22,14 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Real-time update for card widget
+    _cardNameController.addListener(() => setState(() {}));
+    _lastFourController.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _cardNameController.dispose();
     _lastFourController.dispose();
@@ -30,13 +38,13 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen formdaki eksikleri tamamlayın')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lütfen formdaki eksikleri tamamlayın')));
       return;
     }
 
     setState(() => _isLoading = true);
 
-    // Check card limit
     final cards = ref.read(cardsProvider).asData?.value ?? [];
     final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
 
@@ -51,11 +59,14 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
               'Ücretsiz planda en fazla 2 kart ekleyebilirsiniz. Sınırsız kart eklemek için Premium\'a geçin.',
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal')),
               FilledButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const PaywallView()));
                 },
                 child: const Text('Premium\'a Geç'),
               ),
@@ -83,15 +94,18 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
 
       if (mounted) {
         ref.invalidate(cardsProvider);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Kart başarıyla eklendi!'), backgroundColor: Colors.green));
-        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Kart başarıyla eklendi!'),
+            backgroundColor: Colors.green));
+        Navigator.pop(context, card);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
+          SnackBar(
+              content: Text('Hata: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5)),
         );
       }
     } finally {
@@ -106,7 +120,11 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
     final theme = Theme.of(context);
 
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 24,
+          left: 24,
+          right: 24),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -120,18 +138,26 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
             children: [
               Text(
                 'Yeni Kart Ekle',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+
+              // Digital Card Preview
+              _buildCardPreview(theme),
+
+              const SizedBox(height: 32),
               TextFormField(
                 controller: _cardNameController,
+                textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
-                  labelText: 'Kart Adı',
+                  labelText: 'Kart Takma Adı',
                   hintText: 'Örn: İş Kartım',
                   prefixIcon: Icon(Icons.label_rounded),
                 ),
-                validator: (v) => v == null || v.isEmpty ? 'Lütfen bir ad girin' : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Lütfen bir ad girin' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -141,12 +167,16 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
                   hintText: '1234',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(12.0),
-                    child: Image.asset('assets/services/credit_card.png', width: 20, height: 20, fit: BoxFit.contain),
+                    child: Image.asset('assets/services/credit_card.png',
+                        width: 20, height: 20, fit: BoxFit.contain),
                   ),
                 ),
                 keyboardType: TextInputType.number,
                 maxLength: 4,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4)
+                ],
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Gerekli';
                   if (v.length != 4) return '4 hane olmalı';
@@ -157,20 +187,168 @@ class _AddCardViewState extends ConsumerState<AddCardView> {
               const SizedBox(height: 32),
               FilledButton.icon(
                 onPressed: _isLoading ? null : _submit,
-                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16)),
                 icon: _isLoading
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.add_rounded),
-                label: Text(_isLoading ? 'Ekleniyor...' : 'Ekle'),
+                label: Text(_isLoading ? 'Ekleniyor...' : 'Kartı Kaydet'),
               ),
               const SizedBox(height: 32),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCardPreview(ThemeData theme) {
+    String name = _cardNameController.text.toUpperCase();
+    if (name.isEmpty) name = "KART ADI";
+
+    String lastFour = _lastFourController.text;
+    if (lastFour.isEmpty) lastFour = "****";
+
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withValues(alpha: 0.8),
+            theme.colorScheme.secondary,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Background pattern/branding
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Icon(
+              Icons.credit_card,
+              size: 150,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'BANKA',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: Colors.white70,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        Text(
+                          name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Icon(Icons.nfc, color: Colors.white70, size: 28),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '**** **** **** ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            letterSpacing: 2,
+                            fontFamily: 'Courier',
+                          ),
+                        ),
+                        Text(
+                          lastFour,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                            fontFamily: 'Courier',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'PREMIUM MEMBER',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 10,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.8),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Transform.translate(
+                              offset: const Offset(-12, 0),
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.8),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

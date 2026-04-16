@@ -95,6 +95,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
 
       if (data.session != null) {
         SubscriptionService.logIn(data.session!.user.id);
+        ref.read(authServiceProvider).syncFCMToken(); // Token eşitle
       } else {
         SubscriptionService.logOut();
       }
@@ -137,6 +138,8 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
     return authState.when(
       data: (session) {
         if (session != null) {
+          // Build sırasında state değiştirmediğimizden emin olarak sessizce çağır
+          Future.microtask(() => ref.read(authServiceProvider).syncFCMToken());
           return const NavigationContainer();
         }
         return const LandingView();

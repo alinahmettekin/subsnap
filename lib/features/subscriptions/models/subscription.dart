@@ -1,4 +1,4 @@
-﻿import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'subscription.freezed.dart';
 part 'subscription.g.dart';
@@ -19,6 +19,7 @@ abstract class Subscription with _$Subscription {
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'card_id') String? cardId,
     @JsonKey(name: 'service_id') String? serviceId,
+    @JsonKey(name: 'reminders_enabled') @Default(true) bool remindersEnabled,
   }) = _Subscription;
 
   factory Subscription.fromJson(Map<String, dynamic> json) => _$SubscriptionFromJson(json);

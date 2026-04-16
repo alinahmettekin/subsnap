@@ -108,7 +108,7 @@ class DashboardView extends ConsumerWidget {
                         if (isPremium) return const SizedBox.shrink();
 
                         final subscriptionCount = subs.length;
-                        const maxFree = 6;
+                        const maxFree = 5;
                         final progress = subscriptionCount / maxFree;
 
                         return Padding(

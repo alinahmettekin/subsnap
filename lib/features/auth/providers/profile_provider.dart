@@ -35,6 +35,13 @@ class ProfileService {
         .update({'full_name': fullName})
         .eq('id', userId);
   }
+
+  Future<void> updateNotifications(String userId, bool enabled) async {
+    await _client
+        .from('profiles')
+        .update({'notifications_enabled': enabled})
+        .eq('id', userId);
+  }
   Future<String> uploadAvatar(String userId, Uint8List imageBytes, String extension) async {
     final fileName = '$userId-${DateTime.now().millisecondsSinceEpoch}.$extension';
     final path = 'avatars/$fileName';
@@ -126,6 +133,17 @@ class UserProfileNotifier extends AsyncNotifier<UserProfile?> {
 
     // Update state locally
     state = AsyncData(state.value?.copyWith(clearAvatar: true));
+  }
+
+  Future<void> toggleNotifications(bool enabled) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final profileService = ref.read(profileServiceProvider);
+    await profileService.updateNotifications(user.id, enabled);
+
+    // Update state locally
+    state = AsyncData(state.value?.copyWith(notificationsEnabled: enabled));
   }
 }
 

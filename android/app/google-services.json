@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "179622210147",
+    "project_id": "subsnap-a6a1e",
+    "storage_bucket": "subsnap-a6a1e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:179622210147:android:7e5b4c75bb077dec342656",
+        "android_client_info": {
+          "package_name": "com.aatstdio.subsnap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPOwwExYS-tBaWpbV2-TKoqni-J3G74zQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

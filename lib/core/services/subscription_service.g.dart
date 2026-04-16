@@ -40,7 +40,7 @@ final class IsPremiumProvider
   }
 }
 
-String _$isPremiumHash() => r'e0995b74fe2443d05738a3666c03d2770d9c3cf3';
+String _$isPremiumHash() => r'cf3ef283f2b7943aadb3625a2f6639a5478ce597';
 
 @ProviderFor(PremiumStatus)
 final premiumStatusProvider = PremiumStatusProvider._();

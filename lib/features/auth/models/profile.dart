@@ -3,12 +3,14 @@ class UserProfile {
   final String? fullName;
   final String? avatarUrl;
   final bool isSpecialPremium;
+  final bool notificationsEnabled;
 
   UserProfile({
     required this.id,
     this.fullName,
     this.avatarUrl,
     this.isSpecialPremium = false,
+    this.notificationsEnabled = true,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class UserProfile {
       fullName: json['full_name'],
       avatarUrl: json['avatar_url'],
       isSpecialPremium: json['is_special_remium'] ?? false,
+      notificationsEnabled: json['notifications_enabled'] ?? true,
     );
   }
 
@@ -26,6 +29,7 @@ class UserProfile {
       'full_name': fullName,
       'avatar_url': avatarUrl,
       'is_special_remium': isSpecialPremium,
+      'notifications_enabled': notificationsEnabled,
     };
   }
 
@@ -33,6 +37,7 @@ class UserProfile {
     String? fullName,
     String? avatarUrl,
     bool? isSpecialPremium,
+    bool? notificationsEnabled,
     bool clearAvatar = false,
   }) {
     return UserProfile(
@@ -40,6 +45,7 @@ class UserProfile {
       fullName: fullName ?? this.fullName,
       avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
       isSpecialPremium: isSpecialPremium ?? this.isSpecialPremium,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
     );
   }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:subsnap/core/utils/constants.dart';
 import '../services/support_service.dart';
 import '../../subscriptions/views/paywall_view.dart';
 
@@ -118,6 +120,19 @@ class _HelpAndSupportViewState extends ConsumerState<HelpAndSupportView> {
             _buildServiceRequestForm('service_request', theme),
             const SizedBox(height: 16),
             _buildFeedbackForm('feedback', theme),
+            const SizedBox(height: 32),
+            Text('Yasal', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            _buildFAQActionItem(
+              'Kullanım Koşulları',
+              icon: Icons.description_outlined,
+              onTap: () => launchUrl(Uri.parse(AppConstants.termsOfUseUrl)),
+            ),
+            _buildFAQActionItem(
+              'Gizlilik Politikası',
+              icon: Icons.privacy_tip_outlined,
+              onTap: () => launchUrl(Uri.parse(AppConstants.privacyPolicyUrl)),
+            ),
             const SizedBox(height: 32),
           ],
         ),

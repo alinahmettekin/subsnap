@@ -8,7 +8,8 @@ import 'edit_card_view.dart';
 class CardsListView extends ConsumerWidget {
   const CardsListView({super.key});
 
-  Future<bool> _deleteCard(BuildContext context, WidgetRef ref, String cardId, String cardName) async {
+  Future<bool> _deleteCard(BuildContext context, WidgetRef ref, String cardId,
+      String cardName) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -26,12 +27,17 @@ class CardsListView extends ConsumerWidget {
             const SizedBox(height: 4),
             const Text(
               '• Geçmiş ödemelerinizdeki ve analizlerinizdeki kart bilgileri korunmaya devam edecektir.',
-              style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w500),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('İptal')),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -47,14 +53,15 @@ class CardsListView extends ConsumerWidget {
         ref.invalidate(cardsProvider);
         ref.invalidate(allCardsProvider);
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Kart başarıyla silindi'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Kart başarıyla silindi'),
+              backgroundColor: Colors.green));
         }
         return true;
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red));
         }
         return false;
       }
@@ -74,11 +81,14 @@ class CardsListView extends ConsumerWidget {
             'Ücretsiz planda en fazla 2 kart ekleyebilirsiniz. Sınırsız kart eklemek için Premium\'a geçin.',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('İptal')),
             FilledButton(
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const PaywallView()));
               },
               child: const Text('Premium\'a Geç'),
             ),
@@ -112,16 +122,19 @@ class CardsListView extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.credit_card_off_rounded, size: 80, color: theme.colorScheme.outline),
+                  Icon(Icons.credit_card_off_rounded,
+                      size: 80, color: theme.colorScheme.outline),
                   const SizedBox(height: 16),
                   Text(
                     'Henüz kart eklemediniz',
-                    style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.titleLarge
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Abonelikleriniz için kart ekleyin',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: theme.colorScheme.outline),
                   ),
                 ],
               ),
@@ -129,55 +142,27 @@ class CardsListView extends ConsumerWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             itemCount: cards.length,
             itemBuilder: (context, index) {
               final card = cards[index];
               return Dismissible(
                 key: Key(card.id),
                 direction: DismissDirection.endToStart,
-                confirmDismiss: (direction) => _deleteCard(context, ref, card.id, card.cardName),
+                confirmDismiss: (direction) =>
+                    _deleteCard(context, ref, card.id, card.cardName),
                 background: Container(
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20),
-                  margin: const EdgeInsets.only(bottom: 12),
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: Colors.white, size: 28),
                 ),
-                child: Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => EditCardView(card: card),
-                      );
-                    },
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: Image.asset(
-                      'assets/services/credit_card.png',
-                      width: 32,
-                      height: 32,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.credit_card_rounded, size: 28, color: theme.colorScheme.primary),
-                    ),
-                    title: Text(
-                      card.cardName,
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      '•••• ${card.lastFour}',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-                  ),
-                ),
+                child: _buildDigitalCard(context, card, theme, index),
               );
             },
           );
@@ -189,6 +174,144 @@ class CardsListView extends ConsumerWidget {
         onPressed: () => _showAddCard(context, ref),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Kart Ekle'),
+      ),
+    );
+  }
+
+  Widget _buildDigitalCard(
+      BuildContext context, dynamic card, ThemeData theme, int index) {
+    // Variety of gradients for different cards
+    final List<List<Color>> gradients = [
+      [theme.colorScheme.primary, theme.colorScheme.secondary],
+      [const Color(0xFF6A11CB), const Color(0xFF2575FC)],
+      [const Color(0xFF00B4DB), const Color(0xFF0083B0)],
+      [const Color(0xFF232526), const Color(0xFF414345)],
+    ];
+
+    final currentGradient = gradients[index % gradients.length];
+
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => EditCardView(card: card),
+        );
+      },
+      child: Container(
+        height: 160,
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: currentGradient,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: currentGradient[0].withValues(alpha: 0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -20,
+              bottom: -20,
+              child: Icon(
+                Icons.credit_card,
+                size: 130,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'KART TAKMA ADI',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white70,
+                              fontSize: 9,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          Text(
+                            card.cardName.toUpperCase(),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Icon(Icons.nfc, color: Colors.white70, size: 24),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '**** **** **** ${card.lastFour}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              letterSpacing: 2,
+                              fontFamily: 'Courier',
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Icon(Icons.more_horiz, color: Colors.white54),
+                        ],
+                      ),
+                      // Card Brand Mini Logo
+                      Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.8),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Transform.translate(
+                            offset: const Offset(-10, 0),
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.8),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

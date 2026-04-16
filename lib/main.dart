@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:subsnap/core/theme/theme_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -40,6 +41,7 @@ void main() async {
   try {
     await Future.wait([
       initializeDateFormatting('tr_TR', null),
+      Firebase.initializeApp(),
       Supabase.initialize(
         url: AppConstants.supabaseUrl,
         anonKey: AppConstants.supabaseAnonKey,

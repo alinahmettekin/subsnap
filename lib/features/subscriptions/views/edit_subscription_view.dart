@@ -34,6 +34,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
   String? _selectedServiceId;
   String? _selectedCardId;
   bool _isLoading = false;
+  late bool _remindersEnabled;
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     _selectedCategoryId = sub.categoryId;
     _selectedServiceId = sub.serviceId;
     _selectedCardId = sub.cardId;
+    _remindersEnabled = sub.remindersEnabled;
   }
 
   @override
@@ -99,14 +101,14 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
     final currentSubscriptions = ref.read(subscriptionsProvider).asData?.value ?? [];
 
-    if (!isPremium && currentSubscriptions.length >= 6) {
+    if (!isPremium && currentSubscriptions.length >= 5) {
       if (mounted) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Düzenleme Kısıtlı'),
             content: const Text(
-              'Ücretsiz planda limitiniz (6) aşıldığı için düzenleme yapamazsınız. Önce bazı abonelikleri silin veya Premium\'a geçin.',
+              'Ücretsiz planda limitiniz (5) aşıldığı için düzenleme yapamazsınız. Önce bazı abonelikleri silin veya Premium\'a geçin.',
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
@@ -139,6 +141,7 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
         categoryId: _selectedCategoryId,
         cardId: _selectedCardId,
         serviceId: _selectedServiceId,
+        remindersEnabled: _remindersEnabled,
       );
 
       await ref.read(subscriptionRepositoryProvider).updateSubscription(updatedSub);
@@ -178,7 +181,8 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
         sub.billingCycle != _billingCycle ||
         !isSameDate ||
         sub.categoryId != _selectedCategoryId ||
-        sub.cardId != _selectedCardId;
+        sub.cardId != _selectedCardId ||
+        sub.remindersEnabled != _remindersEnabled;
   }
 
   @override
@@ -320,6 +324,8 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              _buildReminderToggle(),
               const SizedBox(height: 32),
               if (_hasChanges())
                 FilledButton.icon(
@@ -400,6 +406,34 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
     );
   }
 
+  Widget _buildReminderToggle() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text(
+          'Ödeme Hatırlatıcısı',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        subtitle: const Text(
+          'Son 3 gün ve 1 gün kala bildirim gönder',
+          style: TextStyle(fontSize: 12),
+        ),
+        value: _remindersEnabled,
+        onChanged: (val) => setState(() => _remindersEnabled = val),
+        secondary: Icon(
+          Icons.notifications_active_outlined,
+          color: _remindersEnabled ? theme.colorScheme.primary : Colors.grey,
+        ),
+      ),
+    );
+  }
+
   void _showBillingCycleSheet() {
     final cycles = {
       'weekly': 'Haftalık',
@@ -456,28 +490,20 @@ class _EditSubscriptionViewState extends ConsumerState<EditSubscriptionView> {
             Navigator.pop(context);
           },
         ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: FilledButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const AddCardView(),
-              );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.primaryColor.withOpacity(0.1),
-              foregroundColor: theme.primaryColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Yeni Kart Ekle', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
+        _buildSheetItem(
+          title: 'Yeni Kart Ekle',
+          isSelected: false,
+          prefix: Icon(Icons.add_circle_outline_rounded,
+              color: theme.colorScheme.primary, size: 22),
+          onTap: () {
+            Navigator.pop(context);
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const AddCardView(),
+            );
+          },
         ),
       ],
     );

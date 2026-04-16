@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/subscription_service.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +22,28 @@ class PaymentsView extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Ödemeler'),
+          actions: [
+            TextButton.icon(
+              onPressed: () {
+                final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
+                if (!isPremium) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
+                  return;
+                }
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const AddPaymentView(),
+                );
+              },
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Ödeme Ekle'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Ödenecekler'),
@@ -30,29 +52,6 @@ class PaymentsView extends ConsumerWidget {
           ),
         ),
         body: const TabBarView(children: [_PaymentsList(isHistory: false), _PaymentsList(isHistory: true)]),
-        floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 100.0),
-          child: FloatingActionButton.extended(
-            onPressed: () {
-              final isPremium = ref.read(isPremiumProvider).asData?.value ?? false;
-              if (!isPremium) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallView()));
-                return;
-              }
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const AddPaymentView(),
-              );
-            },
-            elevation: 4,
-            icon: const Icon(Icons.add_circle_rounded, size: 24),
-            label: const Text('Ödeme Ekle', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.2)),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-          ),
-        ),
       ),
     );
   }

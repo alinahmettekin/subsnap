@@ -1,4 +1,4 @@
-﻿import 'dart:developer';
+import 'dart:developer';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
@@ -84,7 +84,16 @@ class SubscriptionRepository {
   Future<List<Service>> getServices() async {
     try {
       final response = await _client.from('services').select().order('name', ascending: true);
-      return (response as List).map((json) => Service.fromJson(json)).toList();
+      final services = (response as List).map((json) => Service.fromJson(json)).toList();
+
+      // SubSnap'i en başa taşı
+      final subsnapIndex = services.indexWhere((s) => s.name.toLowerCase() == 'subsnap');
+      if (subsnapIndex != -1) {
+        final subsnap = services.removeAt(subsnapIndex);
+        services.insert(0, subsnap);
+      }
+
+      return services;
     } catch (e) {
       log('DEBUG: Error fetching services: $e');
       return [];

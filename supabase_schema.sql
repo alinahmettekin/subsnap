@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'trial')),
     -- REMOVED is_deleted column
     notes TEXT,
+    reminders_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -350,6 +351,7 @@ DO $$
 DECLARE
     cat_streaming uuid; cat_utility uuid; cat_mobile uuid; cat_isp uuid; 
     cat_software uuid; cat_design uuid; cat_ai uuid; cat_gov uuid; cat_bills uuid;
+    cat_shopping uuid; cat_other uuid;
 BEGIN
     SELECT id INTO cat_streaming FROM categories WHERE name = 'Dijital Platformlar';
     SELECT id INTO cat_utility FROM categories WHERE name = 'Araçlar';
@@ -360,8 +362,11 @@ BEGIN
     SELECT id INTO cat_ai FROM categories WHERE name = 'Yapay Zeka';
     SELECT id INTO cat_gov FROM categories WHERE name = 'Vergi & Kamu';
     SELECT id INTO cat_bills FROM categories WHERE name = 'Fatura';
+    SELECT id INTO cat_shopping FROM categories WHERE name = 'Alışveriş';
+    SELECT id INTO cat_other FROM categories WHERE name = 'Diğer';
 
     INSERT INTO services (name, icon_name, default_billing_cycle, category_id) VALUES
+    ('SubSnap', 'subsnap', 'monthly', cat_other),
     ('Netflix', 'netflix', 'monthly', cat_streaming),
     ('Spotify', 'spotify', 'monthly', cat_streaming),
     ('YouTube Premium', 'youtube', 'monthly', cat_streaming),
@@ -388,7 +393,22 @@ BEGIN
     ('Elektrik', 'electric', 'monthly', cat_bills),
     ('Su', 'water', 'monthly', cat_bills),
     ('Doğalgaz', 'gas', 'monthly', cat_bills),
-    ('Digiturk', 'digiturk', 'yearly', cat_streaming)
+    ('Digiturk', 'digiturk', 'yearly', cat_streaming),
+    ('BeIN Sports', 'bein_sports', 'monthly', cat_streaming),
+    ('Trendyol Plus', 'trendyol', 'monthly', cat_shopping),
+    ('Hepsiburada Premium', 'hepsiburada', 'monthly', cat_shopping),
+    ('Microsoft 365', 'microsoft', 'monthly', cat_software),
+    ('Twitch', 'twitch', 'monthly', cat_streaming),
+    ('TOD TV', 'todtv', 'monthly', cat_streaming),
+    ('Snapchat', 'snapchat', 'monthly', cat_other),
+    ('Canva', 'canva', 'monthly', cat_design),
+    ('PicsArt', 'picsart', 'monthly', cat_design),
+    ('X (Twitter)', 'twitter', 'monthly', cat_other),
+    ('Instagram', 'instagram', 'monthly', cat_other),
+    ('Kick', 'kick', 'monthly', cat_streaming),
+    ('GAİN', 'gaintv', 'monthly', cat_streaming),
+    ('tabii', 'tabii', 'monthly', cat_streaming),
+    ('Crunchyroll', 'crunchyroll', 'monthly', cat_streaming)
     ON CONFLICT (name) DO UPDATE SET 
         category_id = EXCLUDED.category_id, 
         default_billing_cycle = EXCLUDED.default_billing_cycle,

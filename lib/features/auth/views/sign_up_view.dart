@@ -1,10 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:subsnap/core/services/auth_service.dart';
 import 'package:subsnap/features/auth/views/auth_wrapper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:subsnap/core/utils/constants.dart';
 import 'login_view.dart';
 
 class SignUpView extends ConsumerStatefulWidget {
@@ -73,9 +77,9 @@ class _SignUpViewState extends ConsumerState<SignUpView>
       if (mounted) {
         final errorMsg = AuthService.translateError(e);
         if (errorMsg != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMsg)));
         }
       }
     } finally {
@@ -96,9 +100,9 @@ class _SignUpViewState extends ConsumerState<SignUpView>
       if (mounted) {
         final errorMsg = AuthService.translateError(e);
         if (errorMsg != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMsg)));
         }
       }
     } finally {
@@ -119,9 +123,9 @@ class _SignUpViewState extends ConsumerState<SignUpView>
       if (mounted) {
         final errorMsg = AuthService.translateError(e);
         if (errorMsg != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMsg)));
         }
       }
     } finally {
@@ -244,9 +248,14 @@ class _SignUpViewState extends ConsumerState<SignUpView>
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   keyboardType: TextInputType.emailAddress,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                  ],
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Lütfen e-posta girin.';
-                    if (!value.contains('@')) return 'Geçersiz e-posta formatı.';
+                    if (value == null || value.isEmpty)
+                      return 'Lütfen e-posta girin.';
+                    if (!value.contains('@'))
+                      return 'Geçersiz e-posta formatı.';
                     return null;
                   },
                 ),
@@ -258,14 +267,21 @@ class _SignUpViewState extends ConsumerState<SignUpView>
                     prefixIcon: const Icon(Icons.lock_outline),
                     helperText: 'En az 6 karakter',
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   obscureText: _obscurePassword,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Lütfen şifre girin.';
-                    if (value.length < 6) return 'Şifre en az 6 karakter olmalıdır.';
+                    if (value == null || value.isEmpty)
+                      return 'Lütfen şifre girin.';
+                    if (value.length < 6)
+                      return 'Şifre en az 6 karakter olmalıdır.';
                     return null;
                   },
                 ),
@@ -276,14 +292,23 @@ class _SignUpViewState extends ConsumerState<SignUpView>
                     labelText: 'Şifre Tekrar',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () => setState(
+                        () =>
+                            _obscureConfirmPassword = !_obscureConfirmPassword,
+                      ),
                     ),
                   ),
                   obscureText: _obscureConfirmPassword,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Lütfen şifreyi onaylayın.';
-                    if (value != _passwordController.text) return 'Şifreler eşleşmiyor.';
+                    if (value == null || value.isEmpty)
+                      return 'Lütfen şifreyi onaylayın.';
+                    if (value != _passwordController.text)
+                      return 'Şifreler eşleşmiyor.';
                     return null;
                   },
                 ),
@@ -331,17 +356,19 @@ class _SignUpViewState extends ConsumerState<SignUpView>
             onPressed: _isLoading ? null : _signUpWithGoogle,
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: Colors.white,
               foregroundColor: Colors.black87,
               side: BorderSide(color: Colors.grey.shade300),
               elevation: 0,
             ),
-            icon: Image.network(
-              'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
-              height: 18,
+            icon: Image.asset('assets/branding/google.png', height: 20),
+            label: const Text(
+              'Google ile Devam Et',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
-            label: const Text('Google ile Devam Et', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
           ),
           if (Platform.isIOS) ...[
             const SizedBox(height: 12),
@@ -349,20 +376,70 @@ class _SignUpViewState extends ConsumerState<SignUpView>
               onPressed: _isLoading ? null : _signUpWithApple,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
-                foregroundColor: theme.brightness == Brightness.dark ? Colors.black : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: theme.brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
+                foregroundColor: theme.brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white,
                 side: BorderSide.none,
                 elevation: 0,
               ),
               icon: Icon(
                 FontAwesomeIcons.apple,
                 size: 20,
-                color: theme.brightness == Brightness.dark ? Colors.black : Colors.white,
+                color: theme.brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white,
               ),
-              label: const Text('Apple ile Devam Et', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              label: const Text(
+                'Apple ile Devam Et',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
             ),
           ],
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text.rich(
+              TextSpan(
+                text: 'Oturum açarak ',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Kullanım Koşulları',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () =>
+                          launchUrl(Uri.parse(AppConstants.termsOfUseUrl)),
+                  ),
+                  const TextSpan(text: ' ve '),
+                  TextSpan(
+                    text: 'Gizlilik Politikası',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () =>
+                          launchUrl(Uri.parse(AppConstants.privacyPolicyUrl)),
+                  ),
+                  const TextSpan(text: '\'nı kabul etmiş olursunuz.'),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,

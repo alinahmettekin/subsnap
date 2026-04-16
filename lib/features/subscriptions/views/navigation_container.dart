@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,11 +38,9 @@ class _NavigationContainerState extends ConsumerState<NavigationContainer> {
             currentIndex: _currentIndex,
             onSelect: (index) => setState(() => _currentIndex = index),
             onAddSubscription: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => const AddSubscriptionView(),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddSubscriptionView()),
               );
             },
           ),

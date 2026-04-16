@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:crypto/crypto.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../utils/constants.dart';
 import 'subscription_service.dart';
 
@@ -25,30 +26,40 @@ class AuthService {
         return 'Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.';
       } else if (message.contains('email not confirmed')) {
         return 'Lütfen e-posta adresinizi doğrulayın.';
-      } else if (message.contains('rate limit') || message.contains('email rate limit')) {
+      } else if (message.contains('rate limit') ||
+          message.contains('email rate limit')) {
         return 'Çok fazla deneme yaptınız veya e-posta gönderildi. Lütfen bir süre sonra tekrar deneyin.';
-      } else if (message.contains('network') || message.contains('connection')) {
+      } else if (message.contains('network') ||
+          message.contains('connection')) {
         return 'İnternet bağlantınızı kontrol edin.';
-      } else if (message.contains('missing email') || message.contains('validation_failed')) {
+      } else if (message.contains('missing email') ||
+          message.contains('validation_failed')) {
         return 'Lütfen geçerli bir e-posta ve şifre girin.';
       } else if (message.contains('user already registered')) {
         return 'Bu e-posta adresi zaten kayıtlı.';
       } else if (message.contains('weak password')) {
         return 'Şifreniz çok zayıf. En az 6 karakter kullanmalısınız.';
+      } else if (message.contains('for security purposes') ||
+          message.contains('request this after')) {
+        return 'Güvenlik nedeniyle çok sık istek yaptınız. Lütfen biraz bekleyip tekrar deneyin.';
       }
 
-      return 'Bir hata oluştu: ${error.message}';
+      return error.message;
     }
-    
+
     final errorStr = error.toString().toLowerCase();
-    if (errorStr.contains('canceled') || 
-        errorStr.contains('cancelled') || 
+    if (errorStr.contains('canceled') ||
+        errorStr.contains('cancelled') ||
         errorStr.contains('sign_in_canceled') ||
         errorStr.contains('iptal')) {
       return null;
     }
-    
-    return 'Hata: $error';
+
+    return '$error';
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
@@ -71,6 +82,15 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    // Çıkış yapmadan önce FCM token'ı temizle
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId != null) {
+        await _client.from('profiles').update({'fcm_token': null}).eq('id', userId);
+      }
+    } catch (e) {
+      log('DEBUG: Could not clear FCM token on sign out: $e');
+    }
     await SubscriptionService.logOut();
     await _client.auth.signOut();
   }
@@ -206,9 +226,13 @@ class AuthService {
       if (userId != null) {
         // Clean up storage objects first (since function lacks permissons)
         try {
-          final List<FileObject> objects = await _client.storage.from('subsnap').list(path: 'avatars');
-          final userFiles =
-              objects.where((obj) => obj.name.startsWith(userId)).map((obj) => 'avatars/${obj.name}').toList();
+          final List<FileObject> objects = await _client.storage
+              .from('subsnap')
+              .list(path: 'avatars');
+          final userFiles = objects
+              .where((obj) => obj.name.startsWith(userId))
+              .map((obj) => 'avatars/${obj.name}')
+              .toList();
 
           if (userFiles.isNotEmpty) {
             await _client.storage.from('subsnap').remove(userFiles);
@@ -230,12 +254,6 @@ class AuthService {
     await _client.auth.resetPasswordForEmail(
       email,
       redirectTo: 'io.supabase.subsnap://reset-password',
-    );
-  }
-
-  Future<void> updatePassword(String newPassword) async {
-    await _client.auth.updateUser(
-      UserAttributes(password: newPassword),
     );
   }
 
@@ -273,6 +291,34 @@ class AuthService {
       log('DEBUG: ---------------------');
     } catch (e) {
       log('DEBUG: Could not decode JWT for debug: $e');
+    }
+  }
+  // FCM Token'ı Supabase'e kaydet
+  Future<void> syncFCMToken() async {
+    try {
+      final user = _client.auth.currentUser;
+      if (user == null) return;
+
+      final messaging = FirebaseMessaging.instance;
+      
+      // Bildirim izni iste
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        final token = await messaging.getToken();
+        if (token != null) {
+          log('DEBUG: Updating FCM Token for user ${user.id}');
+          await _client.from('profiles').update({
+            'fcm_token': token,
+          }).eq('id', user.id);
+        }
+      }
+    } catch (e) {
+      log('ERROR: Failed to sync FCM token: $e');
     }
   }
 }
